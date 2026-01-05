@@ -34,7 +34,7 @@ serde = { version = "1.0", features = ["derive"] }
 simd-json = "0.14"
 sonic-rs = "0.3"
 proptest = "1.5"
-proptest-derive = "0.5"
+proptest-derive = "0.7"
 arbitrary = { version = "1.4", features = ["derive"] }
 rayon = "1.10"
 ahash = "=0.8.11"
