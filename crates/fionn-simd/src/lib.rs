@@ -10,12 +10,12 @@
 //!
 //! The [`skip`] module provides multiple implementations for skipping JSON values:
 //!
-//! - [`ScalarSkip`](skip::ScalarSkip) - Byte-by-byte baseline
-//! - [`LangdaleSkip`](skip::LangdaleSkip) - Langdale-Lemire XOR prefix algorithm
-//! - [`JsonSkiSkip`](skip::JsonSkiSkip) - `JSONSki` bracket counting (default)
-//! - [`Avx2Skip`](x86::skip::Avx2Skip) - AVX2 SIMD acceleration (`x86_64`)
+//! - [`ScalarSkip`] - Byte-by-byte baseline
+//! - [`LangdaleSkip`] - Langdale-Lemire XOR prefix algorithm
+//! - [`JsonSkiSkip`] - `JSONSki` bracket counting (default)
+//! - [`Avx2Skip`] - AVX2 SIMD acceleration (`x86_64`)
 //!
-//! Use [`SkipStrategy`](skip::SkipStrategy) for runtime selection of the best strategy.
+//! Use [`SkipStrategy`] for runtime selection of the best strategy.
 
 pub mod skip;
 

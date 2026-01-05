@@ -9,7 +9,7 @@ use std::sync::{Arc, OnceLock};
 pub enum PathComponent {
     /// A field name (e.g., "name" in "user.name")
     Field(String),
-    /// An array index (e.g., 0 in "items[0]")
+    /// An array index (e.g., 0 in "items\[0\]")
     ArrayIndex(usize),
 }
 
