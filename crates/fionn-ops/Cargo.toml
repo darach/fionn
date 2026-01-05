@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn-ops"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Operations and processors for fionn"
+readme = "README.md"
+keywords = ["json", "operations", "transform"]
+categories = ["parsing", "encoding"]
+
+[dependencies]
+fionn-core = { path = "../fionn-core" }
+fionn-tape = { path = "../fionn-tape" }
+fionn-crdt = { path = "../fionn-crdt" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+simd-json = "0.14"
+ahash = "=0.8.11"
+smallvec = "1.13"
+rayon = "1.8"
+regex = "1.10"
+bumpalo = "3.19"
+parking_lot = "0.12"
+
+[lints]
+workspace = true

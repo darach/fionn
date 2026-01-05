@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[workspace]
+resolver = "2"
+members = [
+    "crates/fionn-core",
+    "crates/fionn-tape",
+    "crates/fionn-simd",
+    "crates/fionn-ops",
+    "crates/fionn-crdt",
+    "crates/fionn-gron",
+    "crates/fionn-diff",
+    "crates/fionn-stream",
+    "crates/fionn-pool",
+    "crates/fionn-cli",
+    "crates/fionn",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/darach/fionn"
+homepage = "https://github.com/darach/fionn"
+documentation = "https://docs.rs/fionn"
+keywords = ["json", "simd", "gron", "diff", "crdt"]
+categories = ["command-line-utilities", "parsing", "encoding"]
+authors = ["Darach Ennis"]
+
+[workspace.lints.rust]
+rust_2018_idioms = { level = "deny", priority = -1 }
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+cargo_common_metadata = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+cast_sign_loss = "allow"
+multiple_crate_versions = "allow"
+
+[profile.release]
+panic = "abort"
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.release-debug]
+inherits = "release"
+debug = true
+strip = false
+
+[profile.bench]
+inherits = "release"
+debug = true
+
+[profile.dev]
+panic = "abort"

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="processed" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="skipped" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e5e7eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d1d5db;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fastforward" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" font-size="20" font-weight="700" fill="#111827">JSON Processing Model Comparison</text>
+
+  <!-- Input JSON -->
+  <rect x="50" y="55" width="800" height="40" rx="6" fill="#f3f4f6" stroke="#d1d5db" stroke-width="1"/>
+  <text x="60" y="80" font-size="11" font-family="JetBrains Mono, monospace" fill="#374151">{"users":[{"id":1,"name":"Alice","email":"a@x.com"},{"id":2,"name":"Bob","secret":"xxx"}]}</text>
+  <text x="450" y="115" text-anchor="middle" font-size="12" fill="#6b7280">Input: 89 bytes</text>
+
+  <!-- Three columns -->
+  <!-- Column 1: Structural Scanning -->
+  <g transform="translate(50, 140)">
+    <rect width="260" height="320" rx="8" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="260" height="44" rx="8" fill="#1e40af"/>
+    <rect y="36" width="260" height="8" fill="#1e40af"/>
+    <text x="130" y="28" text-anchor="middle" font-size="14" font-weight="600" fill="white">Structural Scanning</text>
+
+    <text x="130" y="65" text-anchor="middle" font-size="11" fill="#6b7280">simdjson / simd-json</text>
+
+    <!-- Processing bar - all processed -->
+    <text x="20" y="95" font-size="11" font-weight="500" fill="#374151">Bytes Processed:</text>
+    <rect x="20" y="105" width="220" height="24" rx="4" fill="url(#processed)"/>
+    <text x="130" y="121" text-anchor="middle" font-size="10" font-weight="600" fill="white">100% (89 bytes)</text>
+
+    <text x="20" y="155" font-size="11" font-weight="500" fill="#374151">Output:</text>
+    <rect x="20" y="165" width="220" height="60" rx="4" fill="#f0f9ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="30" y="185" font-size="10" fill="#1e40af">Structural Index</text>
+    <text x="30" y="200" font-size="9" fill="#6b7280">All 23 structural positions</text>
+    <text x="30" y="215" font-size="9" fill="#6b7280">Complete tape with all values</text>
+
+    <text x="20" y="250" font-size="11" font-weight="500" fill="#374151">Characteristics:</text>
+    <text x="30" y="270" font-size="10" fill="#374151">+ Complete index for random access</text>
+    <text x="30" y="285" font-size="10" fill="#374151">+ Full validation</text>
+    <text x="30" y="300" font-size="10" fill="#dc2626">- Processes unused fields</text>
+  </g>
+
+  <!-- Column 2: Fast-Forwarding -->
+  <g transform="translate(320, 140)">
+    <rect width="260" height="320" rx="8" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="260" height="44" rx="8" fill="#b45309"/>
+    <rect y="36" width="260" height="8" fill="#b45309"/>
+    <text x="130" y="28" text-anchor="middle" font-size="14" font-weight="600" fill="white">Fast-Forwarding</text>
+
+    <text x="130" y="65" text-anchor="middle" font-size="11" fill="#6b7280">JSONSki (query: $.users[*].id)</text>
+
+    <!-- Processing bar - partial -->
+    <text x="20" y="95" font-size="11" font-weight="500" fill="#374151">Bytes Processed:</text>
+    <g>
+      <rect x="20" y="105" width="220" height="24" rx="4" fill="url(#skipped)"/>
+      <rect x="20" y="105" width="44" height="24" rx="4" fill="url(#processed)"/>
+      <rect x="64" y="105" width="66" height="24" fill="url(#fastforward)"/>
+      <rect x="130" y="105" width="44" height="24" fill="url(#processed)"/>
+      <rect x="174" y="105" width="66" height="24" fill="url(#fastforward)"/>
+    </g>
+    <text x="130" y="121" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">~35% parsed, ~65% fast-forwarded</text>
+
+    <text x="20" y="155" font-size="11" font-weight="500" fill="#374151">Output:</text>
+    <rect x="20" y="165" width="220" height="60" rx="4" fill="#fffbeb" stroke="#fde68a" stroke-width="1"/>
+    <text x="30" y="185" font-size="10" fill="#b45309">Extracted Values</text>
+    <text x="30" y="200" font-size="9" fill="#6b7280">[1, 2] (matching query)</text>
+    <text x="30" y="215" font-size="9" fill="#6b7280">Streaming output only</text>
+
+    <text x="20" y="250" font-size="11" font-weight="500" fill="#374151">Characteristics:</text>
+    <text x="30" y="270" font-size="10" fill="#374151">+ Query-driven efficiency</text>
+    <text x="30" y="285" font-size="10" fill="#374151">+ Bracket counting skip</text>
+    <text x="30" y="300" font-size="10" fill="#dc2626">- No reusable structure</text>
+  </g>
+
+  <!-- Column 3: Schema-Aware Skipping -->
+  <g transform="translate(590, 140)">
+    <rect width="260" height="320" rx="8" fill="white" stroke="#e5e7eb" stroke-width="1" filter="url(#shadow)"/>
+    <rect width="260" height="44" rx="8" fill="#059669"/>
+    <rect y="36" width="260" height="8" fill="#059669"/>
+    <text x="130" y="28" text-anchor="middle" font-size="14" font-weight="600" fill="white">Schema-Aware Skipping</text>
+
+    <text x="130" y="65" text-anchor="middle" font-size="11" fill="#6b7280">fionn (schema: [users.*.id])</text>
+
+    <!-- Processing bar - minimal -->
+    <text x="20" y="95" font-size="11" font-weight="500" fill="#374151">Bytes Processed:</text>
+    <g>
+      <rect x="20" y="105" width="220" height="24" rx="4" fill="url(#skipped)"/>
+      <rect x="20" y="105" width="30" height="24" rx="4" fill="url(#processed)"/>
+      <rect x="100" y="105" width="30" height="24" fill="url(#processed)"/>
+    </g>
+    <text x="130" y="121" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">~20% parsed, ~80% skip markers</text>
+
+    <text x="20" y="155" font-size="11" font-weight="500" fill="#374151">Output:</text>
+    <rect x="20" y="165" width="220" height="60" rx="4" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="1"/>
+    <text x="30" y="185" font-size="10" fill="#059669">Skip Tape</text>
+    <text x="30" y="200" font-size="9" fill="#6b7280">Schema-matching nodes + SkipMarkers</text>
+    <text x="30" y="215" font-size="9" fill="#6b7280">Reusable for CRDT operations</text>
+
+    <text x="20" y="250" font-size="11" font-weight="500" fill="#374151">Characteristics:</text>
+    <text x="30" y="270" font-size="10" fill="#374151">+ Operation-inferred schema</text>
+    <text x="30" y="285" font-size="10" fill="#374151">+ Reusable skip tape</text>
+    <text x="30" y="300" font-size="10" fill="#374151">+ CRDT integration</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(50, 475)">
+    <rect x="0" y="-5" width="12" height="12" rx="2" fill="url(#processed)"/>
+    <text x="18" y="5" font-size="10" fill="#374151">Fully parsed</text>
+    <rect x="100" y="-5" width="12" height="12" rx="2" fill="url(#fastforward)"/>
+    <text x="118" y="5" font-size="10" fill="#374151">Fast-forwarded (bracket counting)</text>
+    <rect x="280" y="-5" width="12" height="12" rx="2" fill="url(#skipped)"/>
+    <text x="298" y="5" font-size="10" fill="#374151">Skip marker (not processed)</text>
+  </g>
+</svg>

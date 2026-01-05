@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 350">
+  <defs>
+    <linearGradient id="directGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f5576c"/>
+      <stop offset="100%" style="stop-color:#fa709a"/>
+    </linearGradient>
+    <linearGradient id="tlGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#43e97b"/>
+      <stop offset="100%" style="stop-color:#38f9d7"/>
+    </linearGradient>
+    <linearGradient id="sharedGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <filter id="poolShadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="350" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Tape Pool Acquire/Release Latency</text>
+  <text x="450" y="58" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Cache-conscious pooling eliminates allocation overhead - Criterion data</text>
+
+  <!-- Bar chart -->
+  <g transform="translate(150, 100)">
+    <!-- Y-axis -->
+    <line x1="0" y1="0" x2="0" y2="180" stroke="#444" stroke-width="2"/>
+    <line x1="0" y1="180" x2="550" y2="180" stroke="#444" stroke-width="2"/>
+
+    <!-- Y-axis labels -->
+    <text x="-10" y="180" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">0</text>
+    <text x="-10" y="135" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">5 ns</text>
+    <text x="-10" y="90" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">10 ns</text>
+    <text x="-10" y="45" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">15 ns</text>
+
+    <!-- Grid -->
+    <line x1="0" y1="135" x2="550" y2="135" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="90" x2="550" y2="90" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="45" x2="550" y2="45" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- Bars: scale is 20ns = 180px, so 1ns = 9px -->
+    <!-- Direct allocation: 6.05ns = 54px -->
+    <rect x="50" y="126" width="80" height="54" rx="6" fill="url(#directGrad)" filter="url(#poolShadow)"/>
+    <text x="90" y="200" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">Direct Alloc</text>
+    <text x="90" y="118" text-anchor="middle" fill="#fa709a" font-family="Arial, sans-serif" font-size="12" font-weight="bold">6.0 ns</text>
+
+    <!-- Thread-local: 9.71ns = 87px -->
+    <rect x="190" y="93" width="80" height="87" rx="6" fill="url(#tlGrad)" filter="url(#poolShadow)"/>
+    <text x="230" y="200" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">Thread-Local</text>
+    <text x="230" y="85" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="12" font-weight="bold">9.7 ns</text>
+
+    <!-- Shared: 15.08ns = 136px -->
+    <rect x="330" y="44" width="80" height="136" rx="6" fill="url(#sharedGrad)" filter="url(#poolShadow)"/>
+    <text x="370" y="200" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">Shared Pool</text>
+    <text x="370" y="36" text-anchor="middle" fill="#764ba2" font-family="Arial, sans-serif" font-size="12" font-weight="bold">15.1 ns</text>
+
+    <!-- Comparison annotation -->
+    <g transform="translate(450, 30)">
+      <rect x="0" y="0" width="150" height="100" rx="8" fill="#1a1a2e" stroke="#43e97b" stroke-width="2"/>
+      <text x="75" y="25" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Comparison</text>
+      <line x1="15" y1="35" x2="135" y2="35" stroke="#333" stroke-width="1"/>
+      <text x="75" y="55" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">Heap alloc: ~50-100 ns</text>
+      <text x="75" y="75" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Pool: 5-10× faster</text>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">Operation-Inferred Schema: CRDT to Skip Processing</text>
+  <text x="450" y="50" text-anchor="middle" font-size="11" fill="#6b7280">Delta-state CRDT operations determine which fields to parse</text>
+
+  <!-- Step 1: CRDT Operations -->
+  <g transform="translate(50, 80)">
+    <rect width="220" height="140" rx="8" fill="white" stroke="#8b5cf6" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="220" height="36" rx="8" fill="#8b5cf6"/>
+    <rect y="28" width="220" height="8" fill="#8b5cf6"/>
+    <text x="110" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="white">1. CRDT Operations</text>
+
+    <g transform="translate(15, 50)" font-family="JetBrains Mono, monospace" font-size="10">
+      <text fill="#374151">FieldAdd("user.name", "Alice")</text>
+      <text y="18" fill="#374151">FieldModify("user.age", 30)</text>
+      <text y="36" fill="#374151">FieldDelete("user.temp")</text>
+      <text y="54" fill="#6b7280">// from delta-state sync</text>
+    </g>
+
+    <text x="110" y="125" text-anchor="middle" font-size="9" fill="#6b7280">Source: Kleppmann JSON CRDT</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <path d="M 280 150 L 330 150" stroke="#6b7280" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: Schema Inference -->
+  <g transform="translate(340, 80)">
+    <rect width="220" height="140" rx="8" fill="white" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="220" height="36" rx="8" fill="#3b82f6"/>
+    <rect y="28" width="220" height="8" fill="#3b82f6"/>
+    <text x="110" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="white">2. Schema Inference</text>
+
+    <g transform="translate(15, 50)">
+      <text font-size="10" fill="#374151" font-weight="500">Accessed Paths (automatic):</text>
+      <g transform="translate(0, 18)" font-family="JetBrains Mono, monospace" font-size="10">
+        <rect x="-2" y="-10" width="110" height="16" rx="3" fill="#dbeafe"/>
+        <text fill="#1e40af">["user.name",</text>
+        <rect x="-2" y="8" width="90" height="16" rx="3" fill="#dbeafe"/>
+        <text y="18" fill="#1e40af"> "user.age"]</text>
+      </g>
+      <text y="58" font-size="9" fill="#6b7280">user.temp deleted, excluded</text>
+    </g>
+
+    <text x="110" y="125" text-anchor="middle" font-size="9" fill="#6b7280">Novel: operation-driven</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <path d="M 570 150 L 620 150" stroke="#6b7280" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+  <!-- Step 3: Compiled Schema -->
+  <g transform="translate(630, 80)">
+    <rect width="220" height="140" rx="8" fill="white" stroke="#10b981" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="220" height="36" rx="8" fill="#10b981"/>
+    <rect y="28" width="220" height="8" fill="#10b981"/>
+    <text x="110" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="white">3. Compiled Schema</text>
+
+    <g transform="translate(15, 50)" font-size="10">
+      <text fill="#374151" font-weight="500">Hash-based fast rejection:</text>
+      <g transform="translate(0, 16)" font-family="JetBrains Mono, monospace" font-size="9">
+        <text fill="#059669">hash("user.name") = 0x7a3f</text>
+        <text y="14" fill="#059669">hash("user.age")  = 0x2b1c</text>
+      </g>
+      <text y="52" fill="#374151" font-weight="500">Compiled regex for wildcards</text>
+    </g>
+
+    <text x="110" y="125" text-anchor="middle" font-size="9" fill="#6b7280">O(1) path rejection</text>
+  </g>
+
+  <!-- Processing flow -->
+  <g transform="translate(50, 250)">
+    <text x="400" y="0" text-anchor="middle" font-size="14" font-weight="600" fill="#374151">Skip Processing Pipeline</text>
+
+    <!-- Input JSON -->
+    <g transform="translate(0, 25)">
+      <rect width="250" height="60" rx="6" fill="#f3f4f6" stroke="#d1d5db"/>
+      <text x="125" y="20" text-anchor="middle" font-size="10" font-weight="500" fill="#374151">Input JSON</text>
+      <text x="125" y="38" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280">{"user":{"name":"Alice","age":30,</text>
+      <text x="125" y="50" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#6b7280">"email":"a@x.com","temp":"..."}}</text>
+    </g>
+
+    <!-- Arrow -->
+    <path d="M 260 55 L 310 55" stroke="#6b7280" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+    <!-- Hash check -->
+    <g transform="translate(320, 25)">
+      <rect width="180" height="60" rx="6" fill="#fef3c7" stroke="#fcd34d"/>
+      <text x="90" y="20" text-anchor="middle" font-size="10" font-weight="500" fill="#92400e">Field Hash Check</text>
+      <text x="90" y="38" text-anchor="middle" font-size="9" fill="#78350f">"email" hash not in set</text>
+      <text x="90" y="50" text-anchor="middle" font-size="9" fill="#78350f">→ SKIP (no regex needed)</text>
+    </g>
+
+    <!-- Arrow -->
+    <path d="M 510 55 L 560 55" stroke="#6b7280" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+    <!-- Skip Tape output -->
+    <g transform="translate(570, 25)">
+      <rect width="230" height="60" rx="6" fill="#ecfdf5" stroke="#86efac"/>
+      <text x="115" y="20" text-anchor="middle" font-size="10" font-weight="500" fill="#166534">Skip Tape Output</text>
+      <text x="115" y="38" text-anchor="middle" font-size="9" fill="#15803d">user.name, user.age → parsed</text>
+      <text x="115" y="50" text-anchor="middle" font-size="9" fill="#15803d">user.email, user.temp → SkipMarker</text>
+    </g>
+  </g>
+
+  <!-- Observed-Remove tracking -->
+  <g transform="translate(50, 360)">
+    <rect width="350" height="100" rx="8" fill="white" stroke="#a855f7" stroke-width="2" filter="url(#shadow)"/>
+    <rect width="350" height="32" rx="8" fill="#a855f7"/>
+    <rect y="24" width="350" height="8" fill="#a855f7"/>
+    <text x="175" y="22" text-anchor="middle" font-size="11" font-weight="600" fill="white">Observed-Remove Tracking</text>
+
+    <g transform="translate(15, 45)" font-size="10">
+      <text fill="#374151" font-weight="500">Concurrent modification resolution:</text>
+      <text y="18" fill="#6b7280">Updates win over concurrent deletes</text>
+      <text y="34" fill="#6b7280">Only observed additions can be deleted</text>
+      <text y="50" fill="#6b7280">No tombstones (Almeida et al. delta-state)</text>
+    </g>
+  </g>
+
+  <!-- Benefits box -->
+  <g transform="translate(430, 360)">
+    <rect width="420" height="100" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+    <text x="210" y="25" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">Novel Integration Benefits</text>
+
+    <g transform="translate(20, 45)" font-size="10">
+      <text fill="#374151">1. Schema derived from operations, not static config</text>
+      <text y="18" fill="#374151">2. Skip tape compatible with CRDT merge semantics</text>
+      <text y="36" fill="#374151">3. Observed-remove ensures update-delete consistency</text>
+      <text y="54" fill="#374151">4. Delta-state minimizes sync overhead</text>
+    </g>
+  </g>
+</svg>

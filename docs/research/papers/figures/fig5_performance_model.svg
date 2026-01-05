@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="bar-serde" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6b7280"/>
+      <stop offset="100%" style="stop-color:#4b5563"/>
+    </linearGradient>
+    <linearGradient id="bar-simdjson" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+    <linearGradient id="bar-jsonski" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="bar-sonic" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ec4899"/>
+      <stop offset="100%" style="stop-color:#db2777"/>
+    </linearGradient>
+    <linearGradient id="bar-serde" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="bar-serde-par" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22d3ee"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" font-size="18" font-weight="700" fill="#111827">Performance Progression: From Baseline to Parallel Skip Processing</text>
+  <text x="450" y="55" text-anchor="middle" font-size="11" fill="#6b7280">1 MB JSON document, 10% schema-matching fields, serde_json as baseline</text>
+
+  <!-- Chart area -->
+  <g transform="translate(180, 85)">
+    <!-- Y-axis -->
+    <line x1="0" y1="0" x2="0" y2="350" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="-10" y="5" text-anchor="end" font-size="10" fill="#6b7280">0</text>
+    <text x="-10" y="93" text-anchor="end" font-size="10" fill="#6b7280">29.5×</text>
+    <text x="-10" y="180" text-anchor="end" font-size="10" fill="#6b7280">50x</text>
+    <text x="-10" y="268" text-anchor="end" font-size="10" fill="#6b7280">75x</text>
+    <text x="-10" y="355" text-anchor="end" font-size="10" fill="#6b7280">100x+</text>
+    <text x="-70" y="180" text-anchor="middle" font-size="11" fill="#374151" transform="rotate(-90, -70, 180)">Speedup vs serde_json</text>
+
+    <!-- Grid lines -->
+    <line x1="0" y1="87.5" x2="620" y2="87.5" stroke="#f3f4f6" stroke-width="1"/>
+    <line x1="0" y1="175" x2="620" y2="175" stroke="#f3f4f6" stroke-width="1"/>
+    <line x1="0" y1="262.5" x2="620" y2="262.5" stroke="#f3f4f6" stroke-width="1"/>
+
+    <!-- Bars -->
+    <!-- serde_json (baseline) -->
+    <g transform="translate(20, 0)">
+      <rect x="0" y="346.5" width="70" height="3.5" rx="2" fill="url(#bar-serde)"/>
+      <text x="35" y="340" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">1x</text>
+      <text x="35" y="375" text-anchor="middle" font-size="10" fill="#374151">serde_json</text>
+      <text x="35" y="388" text-anchor="middle" font-size="8" fill="#9ca3af">(baseline)</text>
+    </g>
+
+    <!-- simdjson -->
+    <g transform="translate(120, 0)">
+      <rect x="0" y="336" width="70" height="14" rx="2" fill="url(#bar-simdjson)"/>
+      <text x="35" y="330" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">4x</text>
+      <text x="35" y="375" text-anchor="middle" font-size="10" fill="#374151">simdjson</text>
+      <text x="35" y="388" text-anchor="middle" font-size="8" fill="#9ca3af">two-stage</text>
+    </g>
+
+    <!-- sonic-rs -->
+    <g transform="translate(220, 0)">
+      <rect x="0" y="329" width="70" height="21" rx="2" fill="url(#bar-sonic)"/>
+      <text x="35" y="323" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">6x</text>
+      <text x="35" y="375" text-anchor="middle" font-size="10" fill="#374151">sonic-rs</text>
+      <text x="35" y="388" text-anchor="middle" font-size="8" fill="#9ca3af">direct parse</text>
+    </g>
+
+    <!-- JSONSki approach -->
+    <g transform="translate(320, 0)">
+      <rect x="0" y="290" width="70" height="60" rx="2" fill="url(#bar-jsonski)"/>
+      <text x="35" y="284" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">17x</text>
+      <text x="35" y="375" text-anchor="middle" font-size="10" fill="#374151">fast-forward</text>
+      <text x="35" y="388" text-anchor="middle" font-size="8" fill="#9ca3af">query-driven</text>
+    </g>
+
+    <!-- fionn skip tape -->
+    <g transform="translate(420, 0)">
+      <rect x="0" y="262" width="70" height="88" rx="2" fill="url(#bar-serde)"/>
+      <text x="35" y="256" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">29.5×</text>
+      <text x="35" y="375" text-anchor="middle" font-size="10" fill="#374151">fionn</text>
+      <text x="35" y="388" text-anchor="middle" font-size="8" fill="#9ca3af">skip tape</text>
+    </g>
+
+    <!-- fionn parallel -->
+    <g transform="translate(520, 0)">
+      <rect x="0" y="0" width="70" height="350" rx="2" fill="url(#bar-serde-par)"/>
+      <text x="35" y="-6" text-anchor="middle" font-size="10" font-weight="600" fill="#374151">200x+</text>
+      <text x="35" y="375" text-anchor="middle" font-size="10" fill="#374151">fionn</text>
+      <text x="35" y="388" text-anchor="middle" font-size="8" fill="#9ca3af">parallel (8 cores)</text>
+    </g>
+  </g>
+
+  <!-- Annotations -->
+  <g transform="translate(50, 460)">
+    <rect width="800" height="75" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+
+    <text x="20" y="22" font-size="11" font-weight="600" fill="#374151">Contribution Breakdown:</text>
+
+    <g transform="translate(20, 35)">
+      <rect x="0" y="0" width="12" height="12" rx="2" fill="url(#bar-simdjson)"/>
+      <text x="18" y="10" font-size="10" fill="#374151">SIMD structural scan (4x over byte-by-byte)</text>
+
+      <rect x="260" y="0" width="12" height="12" rx="2" fill="url(#bar-jsonski)"/>
+      <text x="278" y="10" font-size="10" fill="#374151">Fast-forward skip (4x over full parse)</text>
+
+      <rect x="520" y="0" width="12" height="12" rx="2" fill="url(#bar-serde)"/>
+      <text x="538" y="10" font-size="10" fill="#374151">Schema hash rejection (1.5x)</text>
+    </g>
+
+    <g transform="translate(20, 55)">
+      <rect x="0" y="0" width="12" height="12" rx="2" fill="url(#bar-serde-par)"/>
+      <text x="18" y="10" font-size="10" fill="#374151">Parallel batch processing (8x with 8 cores, near-linear scaling for independent documents)</text>
+    </g>
+  </g>
+</svg>

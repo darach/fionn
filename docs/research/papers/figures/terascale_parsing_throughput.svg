@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400">
+  <defs>
+    <linearGradient id="serdeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#636e72"/>
+      <stop offset="100%" style="stop-color:#b2bec3"/>
+    </linearGradient>
+    <linearGradient id="simdjsonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="fionnGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#43e97b"/>
+      <stop offset="100%" style="stop-color:#38f9d7"/>
+    </linearGradient>
+    <filter id="barShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="400" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Parsing Throughput by Document Size</text>
+  <text x="450" y="58" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Criterion benchmark data (AMD Ryzen 9 5900X)</text>
+
+  <!-- Chart area -->
+  <g transform="translate(100, 90)">
+    <!-- Y-axis (time in ns) -->
+    <line x1="0" y1="0" x2="0" y2="250" stroke="#444" stroke-width="2"/>
+    <line x1="0" y1="250" x2="700" y2="250" stroke="#444" stroke-width="2"/>
+
+    <!-- Y-axis labels -->
+    <text x="-10" y="250" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">0</text>
+    <text x="-10" y="187" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">1μs</text>
+    <text x="-10" y="125" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">2μs</text>
+    <text x="-10" y="62" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">3μs</text>
+    <text x="-10" y="0" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">4μs</text>
+
+    <!-- Grid lines -->
+    <line x1="0" y1="187" x2="700" y2="187" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="125" x2="700" y2="125" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="62" x2="700" y2="62" stroke="#333" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- Small JSON (40 bytes): serde=122ns, simd-json=164ns, fionn=173ns -->
+    <g transform="translate(50, 0)">
+      <text x="60" y="280" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">Small (40B)</text>
+      <!-- Scale: 4000ns = 250px, so 1ns = 0.0625px -->
+      <rect x="10" y="242" width="30" height="8" rx="2" fill="url(#serdeGrad)" filter="url(#barShadow)"/>
+      <rect x="50" y="240" width="30" height="10" rx="2" fill="url(#simdjsonGrad)" filter="url(#barShadow)"/>
+      <rect x="90" y="239" width="30" height="11" rx="2" fill="url(#fionnGrad)" filter="url(#barShadow)"/>
+      <text x="25" y="235" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">122ns</text>
+      <text x="65" y="233" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">164ns</text>
+      <text x="105" y="232" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">173ns</text>
+    </g>
+
+    <!-- Medium JSON (200 bytes): serde=654ns, simd-json=404ns, fionn=417ns -->
+    <g transform="translate(230, 0)">
+      <text x="60" y="280" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">Medium (200B)</text>
+      <!-- 654ns = 41px, 404ns = 25px, 417ns = 26px -->
+      <rect x="10" y="209" width="30" height="41" rx="2" fill="url(#serdeGrad)" filter="url(#barShadow)"/>
+      <rect x="50" y="225" width="30" height="25" rx="2" fill="url(#simdjsonGrad)" filter="url(#barShadow)"/>
+      <rect x="90" y="224" width="30" height="26" rx="2" fill="url(#fionnGrad)" filter="url(#barShadow)"/>
+      <text x="25" y="202" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">654ns</text>
+      <text x="65" y="218" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">404ns</text>
+      <text x="105" y="217" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">417ns</text>
+    </g>
+
+    <!-- Large JSON (~1KB): serde=4159ns, simd-json=1614ns, fionn=1600ns -->
+    <g transform="translate(410, 0)">
+      <text x="60" y="280" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="12">Large (~1KB)</text>
+      <!-- 4159ns = 260px (capped), 1614ns = 101px, 1600ns = 100px -->
+      <rect x="10" y="0" width="30" height="250" rx="2" fill="url(#serdeGrad)" filter="url(#barShadow)"/>
+      <rect x="50" y="149" width="30" height="101" rx="2" fill="url(#simdjsonGrad)" filter="url(#barShadow)"/>
+      <rect x="90" y="150" width="30" height="100" rx="2" fill="url(#fionnGrad)" filter="url(#barShadow)"/>
+      <text x="25" y="-8" text-anchor="middle" fill="#b2bec3" font-family="Arial, sans-serif" font-size="9" font-weight="bold">4.16μs</text>
+      <text x="65" y="142" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">1.61μs</text>
+      <text x="105" y="143" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="8">1.60μs</text>
+    </g>
+
+    <!-- Speedup annotation -->
+    <g transform="translate(550, 50)">
+      <rect x="0" y="0" width="140" height="80" rx="8" fill="#1a1a2e" stroke="#43e97b" stroke-width="2"/>
+      <text x="70" y="25" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="14" font-weight="bold">2.6× faster</text>
+      <text x="70" y="45" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">fionn vs serde</text>
+      <text x="70" y="65" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">at 1KB document</text>
+    </g>
+
+    <!-- Axis title -->
+    <text x="350" y="310" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13">Document Size</text>
+    <text x="-50" y="125" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13" transform="rotate(-90, -50, 125)">Parse Time</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(700, 330)">
+    <rect x="0" y="0" width="15" height="15" rx="2" fill="url(#serdeGrad)"/>
+    <text x="22" y="12" fill="#aaa" font-family="Arial, sans-serif" font-size="11">serde_json</text>
+    <rect x="0" y="22" width="15" height="15" rx="2" fill="url(#simdjsonGrad)"/>
+    <text x="22" y="34" fill="#aaa" font-family="Arial, sans-serif" font-size="11">simd-json</text>
+    <rect x="0" y="44" width="15" height="15" rx="2" fill="url(#fionnGrad)"/>
+    <text x="22" y="56" fill="#aaa" font-family="Arial, sans-serif" font-size="11">fionn</text>
+  </g>
+</svg>

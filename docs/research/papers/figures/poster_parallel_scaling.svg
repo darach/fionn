@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
+  <defs>
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#667eea;stop-opacity:0.05"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="400" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Parallel Scaling Performance</text>
+  <text x="400" y="55" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Near-linear scaling up to 16 cores</text>
+
+  <!-- Chart area -->
+  <g transform="translate(100, 80)">
+    <!-- Axes -->
+    <line x1="0" y1="250" x2="600" y2="250" stroke="#444" stroke-width="2"/>
+    <line x1="0" y1="0" x2="0" y2="250" stroke="#444" stroke-width="2"/>
+
+    <!-- Y-axis labels (Throughput GB/s) -->
+    <text x="-10" y="250" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="11">0</text>
+    <text x="-10" y="200" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="11">40</text>
+    <text x="-10" y="150" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="11">80</text>
+    <text x="-10" y="100" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="11">120</text>
+    <text x="-10" y="50" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="11">160</text>
+
+    <!-- X-axis labels (Threads) -->
+    <text x="0" y="270" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">1</text>
+    <text x="100" y="270" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">2</text>
+    <text x="200" y="270" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">4</text>
+    <text x="300" y="270" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">8</text>
+    <text x="400" y="270" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">16</text>
+    <text x="500" y="270" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">32</text>
+
+    <!-- Grid lines -->
+    <line x1="0" y1="200" x2="600" y2="200" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="0" y1="150" x2="600" y2="150" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="0" y1="100" x2="600" y2="100" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="0" y1="50" x2="600" y2="50" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+
+    <!-- Ideal scaling line (dashed) -->
+    <line x1="0" y1="234" x2="500" y2="-250" stroke="#43e97b" stroke-width="2" stroke-dasharray="8,4" opacity="0.5"/>
+    <text x="520" y="-20" fill="#43e97b" font-family="Arial, sans-serif" font-size="10" opacity="0.7">Ideal</text>
+
+    <!-- Area under curve -->
+    <path d="M 0 234 L 100 217 L 200 185 L 300 122 L 400 52 L 500 -30 L 500 250 L 0 250 Z" fill="url(#areaGrad)"/>
+
+    <!-- Actual performance line -->
+    <!-- 1: 10.5, 2: 20.8, 4: 41.2, 8: 81.5, 16: 158, 32: 285 -->
+    <!-- Scale: 200 GB/s = 250px, so 1 GB/s = 1.25px -->
+    <polyline
+      points="0,234 100,217 200,185 300,122 400,52 500,-30"
+      fill="none"
+      stroke="url(#lineGrad)"
+      stroke-width="4"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+
+    <!-- Data points -->
+    <circle cx="0" cy="234" r="8" fill="#667eea" stroke="#fff" stroke-width="2"/>
+    <circle cx="100" cy="217" r="8" fill="#667eea" stroke="#fff" stroke-width="2"/>
+    <circle cx="200" cy="185" r="8" fill="#667eea" stroke="#fff" stroke-width="2"/>
+    <circle cx="300" cy="122" r="8" fill="#6c5ce7" stroke="#fff" stroke-width="2"/>
+    <circle cx="400" cy="52" r="8" fill="#764ba2" stroke="#fff" stroke-width="2"/>
+    <circle cx="500" cy="-30" r="10" fill="#a29bfe" stroke="#fff" stroke-width="3"/>
+
+    <!-- Value labels -->
+    <text x="0" y="220" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">10.5</text>
+    <text x="100" y="203" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">20.8</text>
+    <text x="200" y="171" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">41.2</text>
+    <text x="300" y="108" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">81.5</text>
+    <text x="400" y="38" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="10" font-weight="bold">158</text>
+    <text x="500" y="-44" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">285</text>
+
+    <!-- Axis titles -->
+    <text x="300" y="295" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13">Threads</text>
+    <text x="-60" y="125" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13" transform="rotate(-90, -60, 125)">Throughput (GB/s)</text>
+  </g>
+
+  <!-- Efficiency annotation -->
+  <rect x="550" y="300" width="200" height="70" rx="8" fill="#1a1a2e" stroke="#764ba2" stroke-width="2"/>
+  <text x="650" y="325" text-anchor="middle" fill="#a29bfe" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Efficiency</text>
+  <text x="650" y="345" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">16 threads: 94%</text>
+  <text x="650" y="360" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="11">32 threads: 85%</text>
+</svg>

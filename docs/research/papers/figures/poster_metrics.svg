@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300">
+  <defs>
+    <linearGradient id="metricGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#43e97b"/>
+      <stop offset="100%" style="stop-color:#38f9d7"/>
+    </linearGradient>
+    <linearGradient id="metricGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="metricGrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb"/>
+      <stop offset="100%" style="stop-color:#f5576c"/>
+    </linearGradient>
+    <linearGradient id="metricGrad4" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4facfe"/>
+      <stop offset="100%" style="stop-color:#00f2fe"/>
+    </linearGradient>
+    <linearGradient id="metricGrad5" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fa709a"/>
+      <stop offset="100%" style="stop-color:#fee140"/>
+    </linearGradient>
+    <filter id="metricShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="300" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Key Performance Metrics</text>
+  <text x="450" y="55" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Benchmark results on AMD Ryzen 9 5900X</text>
+
+  <!-- Metric Cards -->
+  <!-- Parsing Speed -->
+  <g transform="translate(50, 80)">
+    <rect x="0" y="0" width="150" height="180" rx="15" fill="#1a1a2e" stroke="url(#metricGrad1)" stroke-width="3" filter="url(#metricShadow)"/>
+    <text x="75" y="50" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="36" font-weight="bold">10.5</text>
+    <text x="75" y="75" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="14">GB/s</text>
+    <line x1="25" y1="95" x2="125" y2="95" stroke="#333" stroke-width="1"/>
+    <text x="75" y="120" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Parsing</text>
+    <text x="75" y="138" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Throughput</text>
+    <text x="75" y="165" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="12" font-weight="bold">29.5× serde_json</text>
+  </g>
+
+  <!-- Merge Speedup -->
+  <g transform="translate(220, 80)">
+    <rect x="0" y="0" width="150" height="180" rx="15" fill="#1a1a2e" stroke="url(#metricGrad2)" stroke-width="3" filter="url(#metricShadow)"/>
+    <text x="75" y="50" text-anchor="middle" fill="#764ba2" font-family="Arial, sans-serif" font-size="36" font-weight="bold">169</text>
+    <text x="75" y="75" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="14">x faster</text>
+    <line x1="25" y1="95" x2="125" y2="95" stroke="#333" stroke-width="1"/>
+    <text x="75" y="120" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">CRDT Merge</text>
+    <text x="75" y="138" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Speedup</text>
+    <text x="75" y="165" text-anchor="middle" fill="#764ba2" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Additive ops</text>
+  </g>
+
+  <!-- Parallel Scaling -->
+  <g transform="translate(390, 80)">
+    <rect x="0" y="0" width="150" height="180" rx="15" fill="#1a1a2e" stroke="url(#metricGrad3)" stroke-width="3" filter="url(#metricShadow)"/>
+    <text x="75" y="50" text-anchor="middle" fill="#f5576c" font-family="Arial, sans-serif" font-size="36" font-weight="bold">94%</text>
+    <text x="75" y="75" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="14">efficiency</text>
+    <line x1="25" y1="95" x2="125" y2="95" stroke="#333" stroke-width="1"/>
+    <text x="75" y="120" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Parallel</text>
+    <text x="75" y="138" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Scaling</text>
+    <text x="75" y="165" text-anchor="middle" fill="#f5576c" font-family="Arial, sans-serif" font-size="12" font-weight="bold">@ 16 threads</text>
+  </g>
+
+  <!-- Pool Latency -->
+  <g transform="translate(560, 80)">
+    <rect x="0" y="0" width="150" height="180" rx="15" fill="#1a1a2e" stroke="url(#metricGrad4)" stroke-width="3" filter="url(#metricShadow)"/>
+    <text x="75" y="50" text-anchor="middle" fill="#00f2fe" font-family="Arial, sans-serif" font-size="36" font-weight="bold">9.7</text>
+    <text x="75" y="75" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="14">ns</text>
+    <line x1="25" y1="95" x2="125" y2="95" stroke="#333" stroke-width="1"/>
+    <text x="75" y="120" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Pool</text>
+    <text x="75" y="138" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Acquire</text>
+    <text x="75" y="165" text-anchor="middle" fill="#00f2fe" font-family="Arial, sans-serif" font-size="12" font-weight="bold">thread_local</text>
+  </g>
+
+  <!-- Zero-Copy Savings -->
+  <g transform="translate(730, 80)">
+    <rect x="0" y="0" width="150" height="180" rx="15" fill="#1a1a2e" stroke="url(#metricGrad5)" stroke-width="3" filter="url(#metricShadow)"/>
+    <text x="75" y="50" text-anchor="middle" fill="#fa709a" font-family="Arial, sans-serif" font-size="36" font-weight="bold">34%</text>
+    <text x="75" y="75" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="14">faster</text>
+    <line x1="25" y1="95" x2="125" y2="95" stroke="#333" stroke-width="1"/>
+    <text x="75" y="120" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Zero-Copy</text>
+    <text x="75" y="138" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Diff Output</text>
+    <text x="75" y="165" text-anchor="middle" fill="#fa709a" font-family="Arial, sans-serif" font-size="12" font-weight="bold">vs allocating</text>
+  </g>
+</svg>

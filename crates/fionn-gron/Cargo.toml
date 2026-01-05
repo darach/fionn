@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn-gron"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Gron (greppable JSON) functionality for fionn"
+readme = "README.md"
+keywords = ["json", "gron", "grep", "simd"]
+categories = ["command-line-utilities", "parsing"]
+
+[dependencies]
+fionn-core = { path = "../fionn-core" }
+fionn-tape = { path = "../fionn-tape" }
+fionn-simd = { path = "../fionn-simd" }
+simd-json = "0.14"
+ahash = "=0.8.11"
+serde_json = "1.0"
+rayon = "1.8"
+memchr = "2.7"
+smallvec = "1.13"
+itoa = "1.0"
+ryu = "1.0"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[lints]
+workspace = true

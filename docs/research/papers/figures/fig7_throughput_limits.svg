@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <linearGradient id="barGrad1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="barGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f39c12"/>
+      <stop offset="100%" style="stop-color:#d68910"/>
+    </linearGradient>
+    <linearGradient id="barGrad3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#1e8449"/>
+    </linearGradient>
+    <linearGradient id="barGrad4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3498db"/>
+      <stop offset="100%" style="stop-color:#2980b9"/>
+    </linearGradient>
+    <linearGradient id="barGrad5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#9b59b6"/>
+      <stop offset="100%" style="stop-color:#8e44ad"/>
+    </linearGradient>
+    <pattern id="limitPattern" patternUnits="userSpaceOnUse" width="8" height="8">
+      <path d="M0,8 l8,-8 M-2,2 l4,-4 M6,10 l4,-4" stroke="#c0392b" stroke-width="1.5"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    Throughput vs. Hardware Limits
+  </text>
+  <text x="450" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7f8c8d">
+    AMD Ryzen 9 7950X · DDR5-5200 Dual Channel · AVX2
+  </text>
+
+  <!-- Chart area -->
+  <g transform="translate(120, 80)">
+    <!-- Y-axis -->
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- Y-axis labels and gridlines -->
+    <text x="-10" y="320" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">0</text>
+    <line x1="0" y1="320" x2="700" y2="320" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="256" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">10</text>
+    <line x1="0" y1="256" x2="700" y2="256" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="192" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">20</text>
+    <line x1="0" y1="192" x2="700" y2="192" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="128" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">30</text>
+    <line x1="0" y1="128" x2="700" y2="128" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="64" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">40</text>
+    <line x1="0" y1="64" x2="700" y2="64" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="0" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">50</text>
+    <line x1="0" y1="0" x2="700" y2="0" stroke="#ecf0f1" stroke-width="1"/>
+
+    <!-- Y-axis title -->
+    <text x="-70" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" transform="rotate(-90, -70, 160)">
+      Throughput (GB/s)
+    </text>
+
+    <!-- DDR5 Theoretical Limit Line (83.2 GB/s = off chart, show at ~50 with annotation) -->
+    <!-- DDR5 Practical Limit Line (~65 GB/s) - show relative position -->
+    <line x1="0" y1="-30" x2="700" y2="-30" stroke="#c0392b" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="705" y="-26" font-family="Arial, sans-serif" font-size="10" fill="#c0392b">DDR5-5200 Theoretical: 83.2 GB/s</text>
+
+    <line x1="0" y1="30" x2="700" y2="30" stroke="#e74c3c" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="705" y="34" font-family="Arial, sans-serif" font-size="10" fill="#e74c3c">DDR5 Practical: ~65 GB/s</text>
+
+    <!-- L3 Cache bandwidth indicator -->
+    <line x1="0" y1="-100" x2="700" y2="-100" stroke="#9b59b6" stroke-width="1" stroke-dasharray="2,2" opacity="0.5"/>
+    <text x="705" y="-96" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6" opacity="0.7">L3: ~200 GB/s (off scale)</text>
+
+    <!-- Bars -->
+    <!-- serde_json: 0.15 GB/s -->
+    <rect x="30" y="319" width="80" height="1" fill="url(#barGrad1)" rx="2"/>
+    <text x="70" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">serde_json</text>
+    <text x="70" y="312" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#c0392b">0.15</text>
+
+    <!-- simd-json: 0.9 GB/s (6x baseline) -->
+    <rect x="140" y="314" width="80" height="6" fill="url(#barGrad2)" rx="2"/>
+    <text x="180" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">simd-json</text>
+    <text x="180" y="307" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#d68910">0.9</text>
+
+    <!-- sonic-rs: 1.2 GB/s -->
+    <rect x="250" y="312" width="80" height="8" fill="url(#barGrad3)" rx="2"/>
+    <text x="290" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">sonic-rs</text>
+    <text x="290" y="305" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#1e8449">1.2</text>
+
+    <!-- fionn skip (single): 12 GB/s -->
+    <rect x="360" y="243" width="80" height="77" fill="url(#barGrad4)" rx="2"/>
+    <text x="400" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">fionn</text>
+    <text x="400" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">(1 thread)</text>
+    <text x="400" y="236" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2980b9">12.0</text>
+
+    <!-- fionn parallel (16 threads): 23.4 GB/s -->
+    <rect x="470" y="170" width="80" height="150" fill="url(#barGrad5)" rx="2"/>
+    <text x="510" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">fionn</text>
+    <text x="510" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">(16 threads)</text>
+    <text x="510" y="163" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#8e44ad">23.4</text>
+
+    <!-- Theoretical skip limit (memory bound): ~45 GB/s -->
+    <rect x="580" y="32" width="80" height="288" fill="none" stroke="#27ae60" stroke-width="2" stroke-dasharray="5,3" rx="2"/>
+    <text x="620" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">Theoretical</text>
+    <text x="620" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">(skip only)</text>
+    <text x="620" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#27ae60">~45</text>
+
+    <!-- X-axis -->
+    <line x1="0" y1="320" x2="700" y2="320" stroke="#bdc3c7" stroke-width="2"/>
+  </g>
+
+  <!-- Key insights box -->
+  <g transform="translate(50, 420)">
+    <rect x="0" y="0" width="800" height="70" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <text x="15" y="20" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2c3e50">Key Observations:</text>
+    <text x="15" y="38" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • DDR5-5200 dual-channel theoretical max: 83.2 GB/s (5200 MT/s × 8 bytes × 2 channels)
+    </text>
+    <text x="15" y="52" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Practical DRAM bandwidth with overhead: ~65 GB/s · Skip processing approaches 36% of practical limit
+    </text>
+    <text x="15" y="66" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Parallel scaling efficiency: 23.4/12.0 = 1.95× on 16 cores (memory bandwidth bound, not compute bound)
+    </text>
+  </g>
+</svg>

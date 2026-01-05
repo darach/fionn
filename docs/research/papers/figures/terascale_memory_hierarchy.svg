@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <linearGradient id="l1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d2ff"/>
+      <stop offset="100%" style="stop-color:#3a7bd5"/>
+    </linearGradient>
+    <linearGradient id="l2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#43e97b"/>
+      <stop offset="100%" style="stop-color:#38f9d7"/>
+    </linearGradient>
+    <linearGradient id="l3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fa709a"/>
+      <stop offset="100%" style="stop-color:#fee140"/>
+    </linearGradient>
+    <linearGradient id="ramGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="ssdGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f093fb"/>
+      <stop offset="100%" style="stop-color:#f5576c"/>
+    </linearGradient>
+    <filter id="memShadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Memory Hierarchy: The Wall</text>
+  <text x="450" y="58" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Latency grows 80× from L1 to RAM (Dean, 2010)</text>
+
+  <!-- Pyramid visualization -->
+  <g transform="translate(100, 90)">
+    <!-- L1 Cache (top) -->
+    <polygon points="350,0 450,60 250,60" fill="url(#l1Grad)" filter="url(#memShadow)"/>
+    <text x="350" y="40" text-anchor="middle" fill="#0f0f1a" font-family="Arial, sans-serif" font-size="14" font-weight="bold">L1</text>
+
+    <!-- L2 Cache -->
+    <polygon points="250,65 450,65 500,125 200,125" fill="url(#l2Grad)" filter="url(#memShadow)"/>
+    <text x="350" y="102" text-anchor="middle" fill="#0f0f1a" font-family="Arial, sans-serif" font-size="14" font-weight="bold">L2</text>
+
+    <!-- L3 Cache -->
+    <polygon points="200,130 500,130 570,190 130,190" fill="url(#l3Grad)" filter="url(#memShadow)"/>
+    <text x="350" y="167" text-anchor="middle" fill="#0f0f1a" font-family="Arial, sans-serif" font-size="14" font-weight="bold">L3</text>
+
+    <!-- RAM -->
+    <polygon points="130,195 570,195 650,270 50,270" fill="url(#ramGrad)" filter="url(#memShadow)"/>
+    <text x="350" y="240" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">RAM</text>
+
+    <!-- SSD -->
+    <polygon points="50,275 650,275 700,330 0,330" fill="url(#ssdGrad)" filter="url(#memShadow)"/>
+    <text x="350" y="310" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">NVMe SSD</text>
+  </g>
+
+  <!-- Stats table -->
+  <g transform="translate(580, 100)">
+    <rect x="0" y="0" width="280" height="280" rx="10" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+
+    <text x="140" y="30" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Hierarchy Stats</text>
+    <line x1="20" y1="45" x2="260" y2="45" stroke="#333" stroke-width="1"/>
+
+    <!-- Headers -->
+    <text x="30" y="70" fill="#888" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Level</text>
+    <text x="100" y="70" fill="#888" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Latency</text>
+    <text x="170" y="70" fill="#888" font-family="Arial, sans-serif" font-size="11" font-weight="bold">BW</text>
+    <text x="230" y="70" fill="#888" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Cycles</text>
+
+    <!-- L1 -->
+    <text x="30" y="100" fill="#00d2ff" font-family="Arial, sans-serif" font-size="12">L1</text>
+    <text x="100" y="100" fill="#aaa" font-family="Arial, sans-serif" font-size="12">1 ns</text>
+    <text x="170" y="100" fill="#aaa" font-family="Arial, sans-serif" font-size="12">1.5 TB/s</text>
+    <text x="230" y="100" fill="#00d2ff" font-family="Arial, sans-serif" font-size="12" font-weight="bold">4</text>
+
+    <!-- L2 -->
+    <text x="30" y="130" fill="#43e97b" font-family="Arial, sans-serif" font-size="12">L2</text>
+    <text x="100" y="130" fill="#aaa" font-family="Arial, sans-serif" font-size="12">4 ns</text>
+    <text x="170" y="130" fill="#aaa" font-family="Arial, sans-serif" font-size="12">600 GB/s</text>
+    <text x="230" y="130" fill="#43e97b" font-family="Arial, sans-serif" font-size="12" font-weight="bold">16</text>
+
+    <!-- L3 -->
+    <text x="30" y="160" fill="#fa709a" font-family="Arial, sans-serif" font-size="12">L3</text>
+    <text x="100" y="160" fill="#aaa" font-family="Arial, sans-serif" font-size="12">15 ns</text>
+    <text x="170" y="160" fill="#aaa" font-family="Arial, sans-serif" font-size="12">400 GB/s</text>
+    <text x="230" y="160" fill="#fa709a" font-family="Arial, sans-serif" font-size="12" font-weight="bold">60</text>
+
+    <!-- RAM -->
+    <text x="30" y="190" fill="#764ba2" font-family="Arial, sans-serif" font-size="12">RAM</text>
+    <text x="100" y="190" fill="#aaa" font-family="Arial, sans-serif" font-size="12">80 ns</text>
+    <text x="170" y="190" fill="#aaa" font-family="Arial, sans-serif" font-size="12">50 GB/s</text>
+    <text x="230" y="190" fill="#764ba2" font-family="Arial, sans-serif" font-size="12" font-weight="bold">320</text>
+
+    <!-- SSD -->
+    <text x="30" y="220" fill="#f5576c" font-family="Arial, sans-serif" font-size="12">SSD</text>
+    <text x="100" y="220" fill="#aaa" font-family="Arial, sans-serif" font-size="12">20 μs</text>
+    <text x="170" y="220" fill="#aaa" font-family="Arial, sans-serif" font-size="12">7 GB/s</text>
+    <text x="230" y="220" fill="#f5576c" font-family="Arial, sans-serif" font-size="12" font-weight="bold">80K</text>
+
+    <line x1="20" y1="240" x2="260" y2="240" stroke="#333" stroke-width="1"/>
+    <text x="140" y="265" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="11">L1 is 80× faster than RAM</text>
+  </g>
+
+  <!-- Key insight -->
+  <rect x="100" y="440" width="700" height="45" rx="8" fill="#1a1a2e" stroke="#43e97b" stroke-width="2"/>
+  <text x="450" y="468" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="14">Mechanical Sympathy: Design for the cache hierarchy, not the instruction set</text>
+</svg>

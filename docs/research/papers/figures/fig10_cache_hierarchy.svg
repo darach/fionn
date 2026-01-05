@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <linearGradient id="l1Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="l2Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f39c12"/>
+      <stop offset="100%" style="stop-color:#d68910"/>
+    </linearGradient>
+    <linearGradient id="l3Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#1e8449"/>
+    </linearGradient>
+    <linearGradient id="dramGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db"/>
+      <stop offset="100%" style="stop-color:#2980b9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    Memory Hierarchy: Bandwidth &amp; Latency Constraints
+  </text>
+  <text x="450" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7f8c8d">
+    AMD Ryzen 9 7950X (Zen 4) Cache Architecture
+  </text>
+
+  <!-- Left side: Cache hierarchy pyramid -->
+  <g transform="translate(50, 80)">
+    <text x="175" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">
+      Cache Hierarchy
+    </text>
+
+    <!-- L1 (smallest, top) -->
+    <polygon points="175,30 225,80 125,80" fill="url(#l1Grad)" stroke="#c0392b" stroke-width="2"/>
+    <text x="175" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">L1</text>
+
+    <!-- L1 specs -->
+    <text x="250" y="50" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">32 KB/core (16×)</text>
+    <text x="250" y="65" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">~1 TB/s · 4 cycles</text>
+
+    <!-- L2 -->
+    <polygon points="175,85 260,160 90,160" fill="url(#l2Grad)" stroke="#d68910" stroke-width="2"/>
+    <text x="175" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">L2</text>
+
+    <!-- L2 specs -->
+    <text x="280" y="115" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">1 MB/core (16×)</text>
+    <text x="280" y="130" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">~500 GB/s · 12 cycles</text>
+
+    <!-- L3 -->
+    <polygon points="175,165 310,260 40,260" fill="url(#l3Grad)" stroke="#1e8449" stroke-width="2"/>
+    <text x="175" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white" font-weight="bold">L3</text>
+
+    <!-- L3 specs -->
+    <text x="330" y="200" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">32 MB shared</text>
+    <text x="330" y="215" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">~200 GB/s · 40 cycles</text>
+
+    <!-- DRAM -->
+    <rect x="0" y="270" width="350" height="60" fill="url(#dramGrad)" stroke="#2980b9" stroke-width="2" rx="5"/>
+    <text x="175" y="305" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="white" font-weight="bold">DDR5-5200 DRAM</text>
+
+    <!-- DRAM specs -->
+    <text x="175" y="355" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">32 GB Total · Dual Channel</text>
+    <text x="175" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">83.2 GB/s theoretical · ~65 GB/s practical · ~80 ns latency</text>
+  </g>
+
+  <!-- Right side: Bandwidth comparison bars -->
+  <g transform="translate(480, 80)">
+    <text x="180" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2c3e50">
+      Bandwidth Comparison (log scale)
+    </text>
+
+    <!-- Y-axis labels -->
+    <text x="0" y="55" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">L1 Cache</text>
+    <text x="0" y="115" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">L2 Cache</text>
+    <text x="0" y="175" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">L3 Cache</text>
+    <text x="0" y="235" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">DRAM</text>
+    <text x="0" y="295" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">fionn</text>
+    <text x="0" y="310" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">(measured)</text>
+
+    <!-- Bars (log scale: 1000 GB/s = 360px) -->
+    <!-- L1: 1000 GB/s -->
+    <rect x="100" y="40" width="360" height="25" fill="url(#l1Grad)" rx="3"/>
+    <text x="330" y="58" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">~1,000 GB/s</text>
+
+    <!-- L2: 500 GB/s -->
+    <rect x="100" y="100" width="324" height="25" fill="url(#l2Grad)" rx="3"/>
+    <text x="300" y="118" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">~500 GB/s</text>
+
+    <!-- L3: 200 GB/s -->
+    <rect x="100" y="160" width="276" height="25" fill="url(#l3Grad)" rx="3"/>
+    <text x="260" y="178" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">~200 GB/s</text>
+
+    <!-- DRAM: 65 GB/s -->
+    <rect x="100" y="220" width="217" height="25" fill="url(#dramGrad)" rx="3"/>
+    <text x="200" y="238" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">~65 GB/s</text>
+
+    <!-- fionn measured: 23 GB/s -->
+    <rect x="100" y="280" width="164" height="25" fill="#9b59b6" rx="3"/>
+    <text x="175" y="298" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">23.4 GB/s</text>
+
+    <!-- Efficiency annotation -->
+    <line x1="164" y1="245" x2="164" y2="280" stroke="#7f8c8d" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="180" y="265" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6" font-weight="bold">36% DRAM efficiency</text>
+
+    <!-- Scale -->
+    <line x1="100" y1="320" x2="460" y2="320" stroke="#bdc3c7" stroke-width="1"/>
+    <text x="100" y="335" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">10</text>
+    <text x="200" y="335" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">50</text>
+    <text x="280" y="335" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">200</text>
+    <text x="360" y="335" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">500</text>
+    <text x="460" y="335" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">1000 GB/s</text>
+  </g>
+
+  <!-- Bottom: Key constraints table -->
+  <g transform="translate(50, 420)">
+    <rect x="0" y="0" width="800" height="70" fill="#fff" stroke="#bdc3c7" rx="5"/>
+
+    <text x="15" y="18" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2c3e50">Hardware Constraints:</text>
+
+    <!-- Constraint items -->
+    <text x="15" y="38" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • DDR5 Theoretical: 83.2 GB/s (5200 MT/s × 8B × 2ch)
+    </text>
+    <text x="280" y="38" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • DDR5 Practical: ~65 GB/s (overhead, refresh, bank conflicts)
+    </text>
+    <text x="570" y="38" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Total DRAM: 32 GB
+    </text>
+
+    <text x="15" y="55" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • AVX2 Peak: 32B × 5GHz = 160 GB/s/core
+    </text>
+    <text x="280" y="55" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Parallel Ceiling: 16 cores share memory bus
+    </text>
+    <text x="570" y="55" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • L3 Working Set: 32 MB
+    </text>
+  </g>
+</svg>

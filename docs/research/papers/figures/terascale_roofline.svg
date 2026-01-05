@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450">
+  <defs>
+    <linearGradient id="roofGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f5576c"/>
+      <stop offset="100%" style="stop-color:#fa709a"/>
+    </linearGradient>
+    <linearGradient id="memGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="450" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Roofline Model: JSON Parsing</text>
+  <text x="450" y="58" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Memory-bound, not compute-bound (Williams et al., 2009)</text>
+
+  <!-- Chart area -->
+  <g transform="translate(120, 90)">
+    <!-- Axes -->
+    <line x1="0" y1="300" x2="650" y2="300" stroke="#444" stroke-width="2"/>
+    <line x1="0" y1="0" x2="0" y2="300" stroke="#444" stroke-width="2"/>
+
+    <!-- Y-axis labels (log scale: Performance GFLOP/s or GOP/s) -->
+    <text x="-15" y="300" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">1</text>
+    <text x="-15" y="240" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">10</text>
+    <text x="-15" y="180" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">100</text>
+    <text x="-15" y="120" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">1K</text>
+    <text x="-15" y="60" text-anchor="end" fill="#888" font-family="Arial, sans-serif" font-size="10">10K</text>
+
+    <!-- X-axis labels (Operational Intensity ops/byte) -->
+    <text x="0" y="320" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">0.1</text>
+    <text x="130" y="320" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">1</text>
+    <text x="260" y="320" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">10</text>
+    <text x="390" y="320" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">100</text>
+    <text x="520" y="320" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="10">1000</text>
+
+    <!-- Grid lines -->
+    <line x1="0" y1="240" x2="650" y2="240" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="0" y1="180" x2="650" y2="180" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="0" y1="120" x2="650" y2="120" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="0" y1="60" x2="650" y2="60" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="130" y1="0" x2="130" y2="300" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="260" y1="0" x2="260" y2="300" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+    <line x1="390" y1="0" x2="390" y2="300" stroke="#333" stroke-width="1" stroke-dasharray="5,5"/>
+
+    <!-- Compute ceiling (horizontal) -->
+    <line x1="390" y1="50" x2="650" y2="50" stroke="#f5576c" stroke-width="3"/>
+    <text x="520" y="40" text-anchor="middle" fill="#f5576c" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Compute Ceiling: 32 GOP/s</text>
+
+    <!-- Memory bandwidth roof (sloped) -->
+    <line x1="0" y1="270" x2="390" y2="50" stroke="#667eea" stroke-width="3"/>
+    <text x="150" y="130" text-anchor="middle" fill="#667eea" font-family="Arial, sans-serif" font-size="11" font-weight="bold" transform="rotate(-35, 150, 130)">Memory BW: 50 GB/s</text>
+
+    <!-- Ridge point -->
+    <circle cx="390" cy="50" r="6" fill="#43e97b" stroke="#fff" stroke-width="2"/>
+    <text x="400" y="75" fill="#43e97b" font-family="Arial, sans-serif" font-size="10">Ridge</text>
+
+    <!-- JSON parsing point -->
+    <circle cx="170" cy="195" r="10" fill="#fa709a" stroke="#fff" stroke-width="2"/>
+    <text x="185" y="220" fill="#fa709a" font-family="Arial, sans-serif" font-size="12" font-weight="bold">JSON</text>
+    <text x="185" y="235" fill="#888" font-family="Arial, sans-serif" font-size="10">15 ops/byte</text>
+
+    <!-- Gap annotation -->
+    <line x1="170" y1="195" x2="170" y2="100" stroke="#43e97b" stroke-width="2" stroke-dasharray="4,4"/>
+    <text x="180" y="145" fill="#43e97b" font-family="Arial, sans-serif" font-size="11" font-weight="bold">23×</text>
+    <text x="180" y="160" fill="#888" font-family="Arial, sans-serif" font-size="10">gap</text>
+
+    <!-- Axis titles -->
+    <text x="325" y="350" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13">Operational Intensity (ops/byte)</text>
+    <text x="-70" y="150" text-anchor="middle" fill="#888" font-family="Arial, sans-serif" font-size="13" transform="rotate(-90, -70, 150)">Performance (GOP/s)</text>
+  </g>
+
+  <!-- Key insight box -->
+  <rect x="580" y="120" width="280" height="100" rx="10" fill="#1a1a2e" stroke="#fa709a" stroke-width="2"/>
+  <text x="720" y="150" text-anchor="middle" fill="#fa709a" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Key Finding</text>
+  <text x="720" y="175" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">JSON parsing is 23× below</text>
+  <text x="720" y="192" text-anchor="middle" fill="#aaa" font-family="Arial, sans-serif" font-size="11">the compute ceiling.</text>
+  <text x="720" y="209" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Memory is the bottleneck.</text>
+
+  <!-- Legend -->
+  <g transform="translate(580, 250)">
+    <rect x="0" y="0" width="280" height="80" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+    <line x1="20" y1="25" x2="50" y2="25" stroke="#f5576c" stroke-width="3"/>
+    <text x="60" y="30" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Compute bound</text>
+    <line x1="20" y1="55" x2="50" y2="55" stroke="#667eea" stroke-width="3"/>
+    <text x="60" y="60" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Memory bound</text>
+    <circle cx="200" cy="25" r="6" fill="#fa709a" stroke="#fff" stroke-width="1"/>
+    <text x="215" y="30" fill="#aaa" font-family="Arial, sans-serif" font-size="11">JSON</text>
+  </g>
+</svg>

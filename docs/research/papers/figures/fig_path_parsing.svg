@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450">
+  <defs>
+    <linearGradient id="baselineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7f8c8d"/>
+      <stop offset="100%" style="stop-color:#5d6d7e"/>
+    </linearGradient>
+    <linearGradient id="simdGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3498db"/>
+      <stop offset="100%" style="stop-color:#2980b9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="450" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    Path Parsing Performance: Baseline vs SIMD (AVX2)
+  </text>
+  <text x="450" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7f8c8d">
+    Lower is better · Criterion.rs benchmarks with LTO enabled
+  </text>
+
+  <!-- Chart area -->
+  <g transform="translate(120, 80)">
+    <!-- Y-axis -->
+    <line x1="0" y1="0" x2="0" y2="280" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- Y-axis labels and gridlines (scale: 0-2500 ns) -->
+    <text x="-10" y="280" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">0</text>
+    <line x1="0" y1="280" x2="650" y2="280" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="224" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">500</text>
+    <line x1="0" y1="224" x2="650" y2="224" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="168" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">1000</text>
+    <line x1="0" y1="168" x2="650" y2="168" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="112" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">1500</text>
+    <line x1="0" y1="112" x2="650" y2="112" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="56" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">2000</text>
+    <line x1="0" y1="56" x2="650" y2="56" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="0" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">2500</text>
+    <line x1="0" y1="0" x2="650" y2="0" stroke="#ecf0f1" stroke-width="1"/>
+
+    <!-- Y-axis title -->
+    <text x="-70" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" transform="rotate(-90, -70, 140)">
+      Parse Time (nanoseconds)
+    </text>
+
+    <!-- Group 1: Short paths (~20 chars) -->
+    <!-- Baseline: 308.7 ns = 34.5 height -->
+    <rect x="50" y="245.5" width="55" height="34.5" fill="url(#baselineGrad)" rx="2"/>
+    <text x="77.5" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#5d6d7e">309 ns</text>
+
+    <!-- SIMD: 349.3 ns = 39.1 height -->
+    <rect x="115" y="240.9" width="55" height="39.1" fill="url(#simdGrad)" rx="2"/>
+    <text x="142.5" y="235" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2980b9">349 ns</text>
+
+    <!-- Speedup annotation -->
+    <text x="110" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#e74c3c" font-weight="bold">0.88x</text>
+    <text x="110" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Short (~20 chars)</text>
+
+    <!-- Group 2: Long paths (~100 chars) -->
+    <!-- Baseline: 811.2 ns = 90.8 height -->
+    <rect x="250" y="189.2" width="55" height="90.8" fill="url(#baselineGrad)" rx="2"/>
+    <text x="277.5" y="183" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#5d6d7e">811 ns</text>
+
+    <!-- SIMD: 681.8 ns = 76.3 height -->
+    <rect x="315" y="203.7" width="55" height="76.3" fill="url(#simdGrad)" rx="2"/>
+    <text x="342.5" y="198" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2980b9">682 ns</text>
+
+    <!-- Speedup annotation -->
+    <text x="310" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#27ae60" font-weight="bold">1.19x</text>
+    <text x="310" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Long (~100 chars)</text>
+
+    <!-- Group 3: Very Long paths (~300 chars) -->
+    <!-- Baseline: 2304.6 ns = 257.9 height -->
+    <rect x="450" y="22.1" width="55" height="257.9" fill="url(#baselineGrad)" rx="2"/>
+    <text x="477.5" y="16" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#5d6d7e">2305 ns</text>
+
+    <!-- SIMD: 1940.4 ns = 217.1 height -->
+    <rect x="515" y="62.9" width="55" height="217.1" fill="url(#simdGrad)" rx="2"/>
+    <text x="542.5" y="57" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2980b9">1940 ns</text>
+
+    <!-- Speedup annotation -->
+    <text x="510" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#27ae60" font-weight="bold">1.19x</text>
+    <text x="510" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Very Long (~300 chars)</text>
+
+    <!-- X-axis -->
+    <line x1="0" y1="280" x2="650" y2="280" stroke="#bdc3c7" stroke-width="2"/>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(700, 120)">
+    <rect x="0" y="0" width="160" height="70" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <rect x="15" y="15" width="20" height="14" fill="url(#baselineGrad)" rx="2"/>
+    <text x="45" y="26" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">Baseline (memchr)</text>
+    <rect x="15" y="40" width="20" height="14" fill="url(#simdGrad)" rx="2"/>
+    <text x="45" y="51" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">SIMD (AVX2)</text>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(50, 390)">
+    <rect x="0" y="0" width="800" height="50" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <text x="15" y="20" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2c3e50">Key Finding:</text>
+    <text x="100" y="20" font-family="Arial, sans-serif" font-size="11" fill="#34495e">
+      SIMD provides 1.19x speedup for paths &gt;64 bytes. For short paths, scalar memchr is faster due to lower setup overhead.
+    </text>
+    <text x="15" y="38" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">
+      Crossover point: ~64 bytes. Below this threshold, SIMD setup cost exceeds parallel processing benefit.
+    </text>
+  </g>
+</svg>

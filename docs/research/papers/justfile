@@ -1,0 +1,87 @@
+# Justfile for paper generation
+# Requires: pandoc, pandoc-citeproc (or --citeproc flag), pdflatex
+
+figures_dir := "figures"
+
+# Pandoc common options
+pandoc_opts := "--filter pandoc-citeproc --bibliography=references.bib --number-sections --toc --pdf-engine=pdflatex"
+pdf_opts := "-V geometry:margin=1in -V fontsize=11pt -V documentclass=article"
+
+# List available recipes
+default:
+    @just --list
+
+# Build all papers as PDFs
+all: (pdf "paper-full") (pdf "paper-fionn-gron") (pdf "paper-fionn-diffpatchmerge") (pdf "paper-terascale") (pdf "brief")
+
+# Generate PDF for a specific paper
+pdf paper:
+    pandoc {{pandoc_opts}} {{pdf_opts}} -o {{paper}}.pdf {{paper}}.md
+
+# Generate LaTeX source for a specific paper
+tex paper:
+    pandoc {{pandoc_opts}} --standalone {{pdf_opts}} -o {{paper}}.tex {{paper}}.md
+
+# Generate HTML preview for a specific paper
+html paper:
+    pandoc {{pandoc_opts}} --standalone --mathjax \
+        --css=https://cdn.jsdelivr.net/npm/water.css@2/out/water.css \
+        -o {{paper}}.html {{paper}}.md
+
+# Generate DOCX for a specific paper
+docx paper:
+    pandoc {{pandoc_opts}} -o {{paper}}.docx {{paper}}.md
+
+# Build paper-full (main paper)
+paper-full: (pdf "paper-full")
+
+# Build paper-fionn-gron
+paper-fionn-gron: (pdf "paper-fionn-gron")
+
+# Build paper-fionn-diffpatchmerge
+paper-fionn-diffpatchmerge: (pdf "paper-fionn-diffpatchmerge")
+
+# Build paper-terascale
+paper-terascale: (pdf "paper-terascale")
+
+# Convert SVG figures to PNG
+pngs:
+    #!/usr/bin/env bash
+    echo "Converting SVG figures to PNG..."
+    for f in {{figures_dir}}/*.svg; do
+        [ -f "$f" ] || continue
+        echo "  $f -> ${f%.svg}.png"
+        inkscape "$f" --export-type=png --export-dpi=300 \
+            --export-filename="${f%.svg}.png" 2>/dev/null || \
+        rsvg-convert -d 300 -p 300 "$f" -o "${f%.svg}.png" 2>/dev/null || \
+        echo "    (install inkscape or librsvg for PNG conversion)"
+    done
+
+# Compile TikZ figures
+tikz:
+    cd {{figures_dir}} && pdflatex figures.tex
+
+# Word count for a specific paper
+wc paper:
+    @wc -w < {{paper}}.md
+
+# Word count for all papers
+wc-all:
+    @echo "paper-full:"; wc -w < paper-full.md
+    @echo "paper-fionn-gron:"; wc -w < paper-fionn-gron.md
+    @echo "paper-fionn-diffpatchmerge:"; wc -w < paper-fionn-diffpatchmerge.md
+    @echo "paper-terascale:"; wc -w < paper-terascale.md
+
+# Clean generated files for a specific paper
+clean-paper paper:
+    rm -f {{paper}}.pdf {{paper}}.tex {{paper}}.html {{paper}}.docx
+
+# Clean all generated files
+clean:
+    rm -f *.pdf *.tex *.html *.docx
+    rm -f {{figures_dir}}/figures.aux {{figures_dir}}/figures.log
+    rm -f *.aux *.log *.out *.toc
+
+# Clean everything including PNGs
+distclean: clean
+    rm -f {{figures_dir}}/*.png {{figures_dir}}/figures.pdf

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="100%" style="stop-color:#e9ecef"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#212529">
+    gron vs fastgron vs fionn-gron: CLI Performance Comparison
+  </text>
+
+  <!-- Subtitle -->
+  <text x="400" y="55" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#6c757d">
+    Lower is better (milliseconds)
+  </text>
+
+  <!-- Chart area -->
+  <g transform="translate(100, 80)">
+    <!-- Y-axis -->
+    <line x1="0" y1="0" x2="0" y2="320" stroke="#adb5bd" stroke-width="1"/>
+
+    <!-- Y-axis labels -->
+    <text x="-10" y="5" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">70</text>
+    <text x="-10" y="51" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">60</text>
+    <text x="-10" y="97" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">50</text>
+    <text x="-10" y="143" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">40</text>
+    <text x="-10" y="189" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">30</text>
+    <text x="-10" y="235" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">20</text>
+    <text x="-10" y="281" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">10</text>
+    <text x="-10" y="320" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#495057">0</text>
+
+    <!-- Y-axis label -->
+    <text x="-50" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#495057" transform="rotate(-90, -50, 160)">Time (ms)</text>
+
+    <!-- Grid lines -->
+    <line x1="0" y1="46" x2="600" y2="46" stroke="#dee2e6" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="92" x2="600" y2="92" stroke="#dee2e6" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="138" x2="600" y2="138" stroke="#dee2e6" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="184" x2="600" y2="184" stroke="#dee2e6" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="230" x2="600" y2="230" stroke="#dee2e6" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="0" y1="276" x2="600" y2="276" stroke="#dee2e6" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- X-axis -->
+    <line x1="0" y1="320" x2="600" y2="320" stroke="#adb5bd" stroke-width="1"/>
+
+    <!-- Group 1: Small (532 B) -->
+    <g transform="translate(30, 0)">
+      <!-- gron: 1.7ms -->
+      <rect x="0" y="312" width="30" height="8" fill="#6c757d" rx="2"/>
+      <!-- fastgron: 2.4ms -->
+      <rect x="35" y="309" width="30" height="11" fill="#fd7e14" rx="2"/>
+      <!-- fionn-gron: 0.5ms -->
+      <rect x="70" y="318" width="30" height="2" fill="#20c997" rx="2"/>
+      <text x="50" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#495057">532 B</text>
+    </g>
+
+    <!-- Group 2: Medium (41 KB) -->
+    <g transform="translate(170, 0)">
+      <!-- gron: 7.2ms -->
+      <rect x="0" y="287" width="30" height="33" fill="#6c757d" rx="2"/>
+      <!-- fastgron: 2.6ms -->
+      <rect x="35" y="308" width="30" height="12" fill="#fd7e14" rx="2"/>
+      <!-- fionn-gron: 0.8ms -->
+      <rect x="70" y="316" width="30" height="4" fill="#20c997" rx="2"/>
+      <text x="50" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#495057">41 KB</text>
+    </g>
+
+    <!-- Group 3: Large (244 KB) -->
+    <g transform="translate(310, 0)">
+      <!-- gron: 31.7ms -->
+      <rect x="0" y="175" width="30" height="145" fill="#6c757d" rx="2"/>
+      <!-- fastgron: 3.9ms -->
+      <rect x="35" y="302" width="30" height="18" fill="#fd7e14" rx="2"/>
+      <!-- fionn-gron: 2.1ms -->
+      <rect x="70" y="310" width="30" height="10" fill="#20c997" rx="2"/>
+      <text x="50" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#495057">244 KB</text>
+    </g>
+
+    <!-- Group 4: XLarge (1.2 MB) -->
+    <g transform="translate(450, 0)">
+      <!-- gron: 69.2ms -->
+      <rect x="0" y="3" width="30" height="317" fill="#6c757d" rx="2"/>
+      <!-- fastgron: 5.4ms -->
+      <rect x="35" y="295" width="30" height="25" fill="#fd7e14" rx="2"/>
+      <!-- fionn-gron: 5.4ms -->
+      <rect x="70" y="295" width="30" height="25" fill="#20c997" rx="2"/>
+      <text x="50" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#495057">1.2 MB</text>
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(520, 20)">
+      <rect x="0" y="0" width="15" height="15" fill="#6c757d" rx="2"/>
+      <text x="20" y="12" font-family="Arial, sans-serif" font-size="11" fill="#495057">gron (Go)</text>
+
+      <rect x="0" y="25" width="15" height="15" fill="#fd7e14" rx="2"/>
+      <text x="20" y="37" font-family="Arial, sans-serif" font-size="11" fill="#495057">fastgron (C++)</text>
+
+      <rect x="0" y="50" width="15" height="15" fill="#20c997" rx="2"/>
+      <text x="20" y="62" font-family="Arial, sans-serif" font-size="11" fill="#495057">fionn-gron (Rust)</text>
+    </g>
+
+    <!-- Speedup annotations -->
+    <g font-family="Arial, sans-serif" font-size="9" fill="#198754" font-weight="bold">
+      <!-- Small -->
+      <text x="80" y="310" text-anchor="middle">3.2x</text>
+      <!-- Medium -->
+      <text x="220" y="280" text-anchor="middle">9.2x</text>
+      <!-- Large -->
+      <text x="360" y="165" text-anchor="middle">14.8x</text>
+      <!-- XLarge -->
+      <text x="500" y="-5" text-anchor="middle">12.9x</text>
+    </g>
+  </g>
+
+  <!-- Footer note -->
+  <text x="400" y="475" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#6c757d">
+    Speedup annotations show fionn-gron improvement vs gron. hyperfine benchmarks with warmup.
+  </text>
+</svg>

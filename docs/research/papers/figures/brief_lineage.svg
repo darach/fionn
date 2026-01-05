@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280">
+  <!-- Clean, print-friendly lineage diagram -->
+  <rect width="600" height="280" fill="white"/>
+
+  <!-- Title -->
+  <text x="300" y="25" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="bold">Technical Lineage</text>
+
+  <!-- Left column: SIMD Parsing -->
+  <g transform="translate(50, 50)">
+    <text x="100" y="0" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold" fill="#333">SIMD Parsing</text>
+
+    <!-- Mison -->
+    <rect x="30" y="15" width="140" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="100" y="35" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">Mison</text>
+    <text x="100" y="46" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">VLDB 2017</text>
+
+    <line x1="100" y1="50" x2="100" y2="65" stroke="#333" stroke-width="1"/>
+    <polygon points="100,70 96,62 104,62" fill="#333"/>
+
+    <!-- simdjson -->
+    <rect x="30" y="70" width="140" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="100" y="90" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">simdjson</text>
+    <text x="100" y="101" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">VLDB 2019</text>
+
+    <line x1="100" y1="105" x2="100" y2="120" stroke="#333" stroke-width="1"/>
+    <polygon points="100,125 96,117 104,117" fill="#333"/>
+
+    <!-- JSONSki + sonic-rs -->
+    <rect x="0" y="125" width="90" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="45" y="145" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold">JSONSki</text>
+    <text x="45" y="155" text-anchor="middle" font-family="Arial" font-size="7" fill="#666">ASPLOS 2022</text>
+
+    <rect x="110" y="125" width="90" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="155" y="145" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold">sonic-rs</text>
+    <text x="155" y="155" text-anchor="middle" font-family="Arial" font-size="7" fill="#666">2023</text>
+  </g>
+
+  <!-- Right column: CRDT Foundations -->
+  <g transform="translate(350, 50)">
+    <text x="100" y="0" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold" fill="#333">CRDT Foundations</text>
+
+    <!-- Delta-State -->
+    <rect x="30" y="15" width="140" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="100" y="35" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">Delta-State CRDTs</text>
+    <text x="100" y="46" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">JPDC 2018</text>
+
+    <line x1="100" y1="50" x2="100" y2="65" stroke="#333" stroke-width="1"/>
+    <polygon points="100,70 96,62 104,62" fill="#333"/>
+
+    <!-- JSON CRDTs -->
+    <rect x="30" y="70" width="140" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="100" y="90" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">JSON CRDTs</text>
+    <text x="100" y="101" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">IEEE TPDS 2017</text>
+
+    <line x1="100" y1="105" x2="100" y2="120" stroke="#333" stroke-width="1"/>
+    <polygon points="100,125 96,117 104,117" fill="#333"/>
+
+    <!-- DSON -->
+    <rect x="30" y="125" width="140" height="35" fill="white" stroke="#333" stroke-width="1"/>
+    <text x="100" y="145" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">DSON</text>
+    <text x="100" y="155" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">VLDB 2022</text>
+  </g>
+
+  <!-- Convergence arrows -->
+  <line x1="150" y1="215" x2="250" y2="235" stroke="#333" stroke-width="1"/>
+  <line x1="450" y1="215" x2="350" y2="235" stroke="#333" stroke-width="1"/>
+
+  <!-- fionn -->
+  <rect x="200" y="235" width="200" height="40" fill="#eee" stroke="#333" stroke-width="1.5"/>
+  <text x="300" y="258" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold">fionn</text>
+  <text x="300" y="270" text-anchor="middle" font-family="Arial" font-size="9" fill="#333">SIMD + Schema + CRDT + Pool</text>
+</svg>
