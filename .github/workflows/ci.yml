@@ -55,12 +55,13 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
+      # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: cargo clippy --all-targets --features fionn-cli/gpu -- -D warnings
 
       - name: Run Clippy (SARIF)
         run: |
-          cargo clippy --all-targets --all-features --message-format=json | clippy-sarif | tee clippy-results.sarif
+          cargo clippy --all-targets --features fionn-cli/gpu --message-format=json | clippy-sarif | tee clippy-results.sarif
         continue-on-error: true
 
       - name: Upload SARIF
@@ -88,11 +89,12 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
+      # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Build
-        run: cargo build --all-features
+        run: cargo build --features fionn-cli/gpu
 
       - name: Run tests
-        run: cargo test --all-features
+        run: cargo test --features fionn-cli/gpu
 
   # MSRV check
   msrv:
@@ -110,8 +112,9 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
+      # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Check MSRV
-        run: cargo check --all-features
+        run: cargo check --features fionn-cli/gpu
 
   # Documentation
   docs:
@@ -127,8 +130,9 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
+      # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Build documentation
-        run: cargo doc --no-deps --all-features
+        run: cargo doc --no-deps --features fionn-cli/gpu
         env:
           RUSTDOCFLAGS: -D warnings
 
@@ -181,8 +185,9 @@ jobs:
       - name: Cache cargo
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
+      # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Generate coverage
-        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+        run: cargo llvm-cov --features fionn-cli/gpu --lcov --output-path lcov.info
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6

@@ -2097,15 +2097,14 @@ mod tests {
         let serialized = tape.to_json_string().expect("should serialize");
 
         // Debug: print what we got
-        eprintln!("Input:      {}", input);
-        eprintln!("Serialized: {}", serialized);
+        eprintln!("Input:      {input}");
+        eprintln!("Serialized: {serialized}");
 
         // The serialized output should be valid JSON
         let reparsed = DsonTape::parse(&serialized);
         assert!(
             reparsed.is_ok(),
-            "Round-trip failed: serialized JSON is invalid: {}",
-            serialized
+            "Round-trip failed: serialized JSON is invalid: {serialized}"
         );
     }
 
@@ -2117,8 +2116,7 @@ mod tests {
         let reparsed = DsonTape::parse(&serialized);
         assert!(
             reparsed.is_ok(),
-            "Round-trip failed for backslash: {}",
-            serialized
+            "Round-trip failed for backslash: {serialized}"
         );
     }
 
@@ -2130,8 +2128,7 @@ mod tests {
         let reparsed = DsonTape::parse(&serialized);
         assert!(
             reparsed.is_ok(),
-            "Round-trip failed for unicode: {}",
-            serialized
+            "Round-trip failed for unicode: {serialized}"
         );
     }
 
@@ -2139,7 +2136,7 @@ mod tests {
     /// These inputs found issues with string escape handling during serialization.
     #[test]
     fn test_fuzz_crash_inputs() {
-        let crash_inputs = vec![
+        let crash_inputs = [
             // Escaped quote in string
             r#"[ "Hello, \u4e16\"emoji"]"#,
             // Object with escaped characters in key
@@ -2164,23 +2161,21 @@ mod tests {
             }
 
             // Parse with DsonTape
-            let tape = match DsonTape::parse(input) {
-                Ok(t) => t,
-                Err(_) => continue, // Some inputs may be invalid for simd-json
+            let Ok(tape) = DsonTape::parse(input) else {
+                continue; // Some inputs may be invalid for simd-json
             };
 
             // Serialize back
             let serialized = match tape.to_json_string() {
                 Ok(s) => s,
-                Err(e) => panic!("Crash input {} failed to serialize: {}", i, e),
+                Err(e) => panic!("Crash input {i} failed to serialize: {e}"),
             };
 
             // Verify round-trip produces valid JSON
             match DsonTape::parse(&serialized) {
                 Ok(_) => {} // Success!
                 Err(e) => panic!(
-                    "Crash input {} round-trip failed:\n  Input: {}\n  Serialized: {}\n  Error: {}",
-                    i, input, serialized, e
+                    "Crash input {i} round-trip failed:\n  Input: {input}\n  Serialized: {serialized}\n  Error: {e}"
                 ),
             }
         }

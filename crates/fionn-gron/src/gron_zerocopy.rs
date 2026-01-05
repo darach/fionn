@@ -14,7 +14,7 @@ use std::borrow::Cow;
 /// A single gron output line with zero-copy semantics where possible.
 #[derive(Debug, Clone)]
 pub struct GronLine<'a> {
-    /// The JSON path (e.g., "json.users[0].name")
+    /// The JSON path (e.g., "json.users\[0\].name")
     pub path: Cow<'a, str>,
     /// The value (e.g., "\"Alice\"" or "42" or "{}" or "[]")
     pub value: Cow<'a, str>,

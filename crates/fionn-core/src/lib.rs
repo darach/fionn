@@ -7,7 +7,7 @@
 //! - [`path`] - JSON path parsing utilities
 //! - [`schema`] - Schema-based filtering
 //! - [`value`] - Operation value types
-//! - [`dson_traits`] - DSON trait abstractions
+//! - [`operations`] - DSON operation types
 
 #![deny(missing_docs)]
 #![deny(rust_2018_idioms)]

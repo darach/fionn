@@ -5,7 +5,7 @@
 //! - [`BlackBoxProcessor`] - DOMless processing with schema filtering
 //! - [`StreamingProcessor`] - Streaming pipeline for large datasets
 //! - [`SimdDsonProcessor`] - Full CRDT-enabled SIMD processor
-//! - [`TapeDsonProcessor`] - Tape-based operations
+//! - [`TapeDsonProcessor`](crate::processor::TapeDsonProcessor) - Tape-based operations
 
 pub mod black_box;
 pub mod simd_dson;

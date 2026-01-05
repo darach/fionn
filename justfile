@@ -33,10 +33,11 @@ fmt-check:
     cargo fmt -- --check
 
 clippy:
-    cargo clippy -- -D warnings
+    cargo clippy --all-targets -- -D warnings
 
+# Note: afl-fuzz feature excluded; requires AFL toolchain
 clippy-all:
-    cargo clippy --all-features -- -D warnings
+    cargo clippy --all-targets --features fionn-cli/gpu -- -D warnings
 
 lint: fmt-check clippy
 
@@ -46,6 +47,10 @@ doc:
 
 doc-open:
     cargo doc --open
+
+# Note: afl-fuzz feature excluded; requires AFL toolchain
+doc-check:
+    RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --features fionn-cli/gpu
 
 # Clean
 clean:
@@ -82,11 +87,11 @@ audit:
     cargo audit
     cargo deny check
 
-# CI-style check (runs fmt, clippy, tests, security audit)
-ci: fmt-check clippy test audit
+# CI-style check (runs fmt, clippy, doc, tests, security audit)
+ci: fmt-check clippy doc-check test audit
 
 # Full check with all features
-ci-full: fmt-check clippy-all test-all-features audit
+ci-full: fmt-check clippy-all doc-check test-all-features audit
 
 # Run GPU binary
 run-gpu:

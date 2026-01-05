@@ -46,7 +46,7 @@ struct Args {
     #[arg(long = "jsonl")]
     jsonl: bool,
 
-    /// JSONL index format: bracket (json[0]), dot (json.0), or none
+    /// JSONL index format: bracket (json\[0\]), dot (json.0), or none
     #[arg(long = "jsonl-index", default_value = "bracket")]
     jsonl_index: String,
 
@@ -54,7 +54,7 @@ struct Args {
     #[arg(long = "jsonl-errors", default_value = "fail")]
     jsonl_errors: String,
 
-    /// Query filter (JSONPath-like syntax: .field, [0], [*], ..field)
+    /// Query filter (JSONPath-like syntax: .field, \[0\], \[*\], ..field)
     #[arg(short = 'q', long = "query")]
     query: Option<String>,
 
