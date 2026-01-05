@@ -96,7 +96,7 @@ jobs:
 
   # MSRV check
   msrv:
-    name: MSRV (Rust ${{ env.MSRV }})
+    name: MSRV Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
