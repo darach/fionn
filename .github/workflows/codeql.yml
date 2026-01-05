@@ -13,6 +13,9 @@ permissions:
   contents: read
   security-events: write
 
+env:
+  CODEQL_ENABLE_EXPERIMENTAL_FEATURES: true
+
 jobs:
   analyze:
     name: Analyze
