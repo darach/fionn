@@ -59,29 +59,34 @@ bench:
 # Note: Features are not currently defined in the workspace
 
 # Coverage with cargo-llvm-cov (requires cargo-llvm-cov to be installed)
-# coverage:
-#     cargo llvm-cov
+coverage:
+    cargo llvm-cov
 
-# coverage-html:
-#     cargo llvm-cov --html
+coverage-html:
+    cargo llvm-cov --html
 
-# coverage-lcov:
-#     cargo llvm-cov --lcov --output-path lcov.info
+coverage-lcov:
+    cargo llvm-cov --lcov --output-path lcov.info
 
-# coverage-open:
-#     cargo llvm-cov --html --open
+coverage-open:
+    cargo llvm-cov --html --open
 
-# coverage-all-features:
-#     cargo llvm-cov --all-features
+coverage-all-features:
+    cargo llvm-cov --all-features
 
-# coverage-clean:
-#     cargo llvm-cov clean
+coverage-clean:
+    cargo llvm-cov clean
 
-# CI-style check (runs fmt, clippy, tests)
-ci: fmt-check clippy test
+# Security audit (requires cargo-audit and cargo-deny)
+audit:
+    cargo audit
+    cargo deny check
+
+# CI-style check (runs fmt, clippy, tests, security audit)
+ci: fmt-check clippy test audit
 
 # Full check with all features
-ci-full: fmt-check clippy-all test-all-features
+ci-full: fmt-check clippy-all test-all-features audit
 
 # Run GPU binary
 run-gpu:
