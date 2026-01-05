@@ -38,7 +38,7 @@ proptest-derive = "0.5"
 arbitrary = { version = "1.4", features = ["derive"] }
 rayon = "1.10"
 ahash = "=0.8.11"
-json-patch = "3.0"
+json-patch = "4.1"
 
 [lints]
 workspace = true
