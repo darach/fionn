@@ -14,7 +14,7 @@ categories = ["parsing", "encoding"]
 
 [dependencies]
 fionn-core = { path = "../fionn-core" }
-simd-json = "0.14"
+simd-json = "0.17"
 ahash = "=0.8.11"
 serde_json = "1.0"
 

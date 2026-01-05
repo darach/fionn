@@ -16,7 +16,7 @@ categories = ["command-line-utilities", "parsing"]
 fionn-core = { path = "../fionn-core" }
 fionn-tape = { path = "../fionn-tape" }
 fionn-simd = { path = "../fionn-simd" }
-simd-json = "0.14"
+simd-json = "0.17"
 ahash = "=0.8.11"
 serde_json = "1.0"
 rayon = "1.8"
