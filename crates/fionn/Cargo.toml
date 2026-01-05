@@ -32,7 +32,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 simd-json = "0.14"
-sonic-rs = "0.3"
+sonic-rs = "0.5"
 proptest = "1.5"
 proptest-derive = "0.5"
 arbitrary = { version = "1.4", features = ["derive"] }
