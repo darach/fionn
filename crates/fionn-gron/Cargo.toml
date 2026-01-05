@@ -17,7 +17,7 @@ fionn-core = { path = "../fionn-core" }
 fionn-tape = { path = "../fionn-tape" }
 fionn-simd = { path = "../fionn-simd" }
 simd-json = "0.14"
-ahash = "=0.8.11"
+ahash = "=0.8.12"
 serde_json = "1.0"
 rayon = "1.8"
 memchr = "2.7"

@@ -14,7 +14,7 @@ categories = ["parsing", "encoding"]
 [dependencies]
 thiserror = "2.0"
 serde = { version = "1.0", features = ["derive"] }
-ahash = "=0.8.11"
+ahash = "=0.8.12"
 smallvec = "1.13"
 regex = "1.10"
 dashmap = "6.1"
