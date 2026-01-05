@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450">
+  <defs>
+    <linearGradient id="inputGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#74b9ff"/>
+      <stop offset="100%" style="stop-color:#0984e3"/>
+    </linearGradient>
+    <linearGradient id="simdGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="tapeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fdcb6e"/>
+      <stop offset="100%" style="stop-color:#f39c12"/>
+    </linearGradient>
+    <linearGradient id="outputGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00b894"/>
+      <stop offset="100%" style="stop-color:#55efc4"/>
+    </linearGradient>
+    <linearGradient id="crdtGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e17055"/>
+      <stop offset="100%" style="stop-color:#fd79a8"/>
+    </linearGradient>
+    <marker id="arrow2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#888"/>
+    </marker>
+    <filter id="pipelineShadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="450" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">System Architecture</text>
+  <text x="450" y="55" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">End-to-end SIMD-accelerated pipeline</text>
+
+  <!-- Main Pipeline -->
+  <g transform="translate(50, 80)">
+    <!-- Input Stage -->
+    <rect x="0" y="30" width="120" height="80" rx="10" fill="url(#inputGrad)" filter="url(#pipelineShadow)"/>
+    <text x="60" y="65" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="13" font-weight="bold">JSON Input</text>
+    <text x="60" y="85" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="10">+ Schema</text>
+
+    <!-- Arrow -->
+    <line x1="120" y1="70" x2="160" y2="70" stroke="#888" stroke-width="2" marker-end="url(#arrow2)"/>
+
+    <!-- SIMD Parser Stage -->
+    <rect x="165" y="0" width="180" height="140" rx="10" fill="url(#simdGrad2)" filter="url(#pipelineShadow)"/>
+    <text x="255" y="30" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">SIMD Parser</text>
+    <line x1="185" y1="42" x2="325" y2="42" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <text x="255" y="62" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="10">Structural indexing</text>
+    <text x="255" y="78" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="10">XOR prefix sums</text>
+    <text x="255" y="94" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="10">Schema-guided skip</text>
+    <text x="255" y="125" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="11" font-weight="bold">10.5 GB/s</text>
+
+    <!-- Arrow -->
+    <line x1="345" y1="70" x2="385" y2="70" stroke="#888" stroke-width="2" marker-end="url(#arrow2)"/>
+
+    <!-- Tape Stage -->
+    <rect x="390" y="0" width="160" height="140" rx="10" fill="url(#tapeGrad)" filter="url(#pipelineShadow)"/>
+    <text x="470" y="30" text-anchor="middle" fill="#0f0f1a" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Indexed Tape</text>
+    <line x1="410" y1="42" x2="530" y2="42" stroke="rgba(0,0,0,0.2)" stroke-width="1"/>
+    <text x="470" y="62" text-anchor="middle" fill="#333" font-family="Arial, sans-serif" font-size="10">Pre-parsed values</text>
+    <text x="470" y="78" text-anchor="middle" fill="#333" font-family="Arial, sans-serif" font-size="10">String offsets</text>
+    <text x="470" y="94" text-anchor="middle" fill="#333" font-family="Arial, sans-serif" font-size="10">Native integers</text>
+    <text x="470" y="125" text-anchor="middle" fill="#0f0f1a" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Pooled + Reusable</text>
+
+    <!-- Arrow -->
+    <line x1="550" y1="70" x2="590" y2="70" stroke="#888" stroke-width="2" marker-end="url(#arrow2)"/>
+
+    <!-- Output Stage -->
+    <rect x="595" y="30" width="180" height="80" rx="10" fill="url(#outputGrad)" filter="url(#pipelineShadow)"/>
+    <text x="685" y="60" text-anchor="middle" fill="#0f0f1a" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Zero-Copy Output</text>
+    <text x="685" y="80" text-anchor="middle" fill="#333" font-family="Arial, sans-serif" font-size="10">Gron / Path / Values</text>
+  </g>
+
+  <!-- CRDT Operations Branch -->
+  <g transform="translate(390, 250)">
+    <rect x="0" y="0" width="380" height="140" rx="10" fill="url(#crdtGrad2)" filter="url(#pipelineShadow)"/>
+    <text x="190" y="30" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="16" font-weight="bold">CRDT Operations</text>
+    <line x1="30" y1="45" x2="350" y2="45" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+
+    <!-- Three operation boxes -->
+    <rect x="20" y="60" width="100" height="60" rx="6" fill="rgba(255,255,255,0.15)"/>
+    <text x="70" y="85" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Diff</text>
+    <text x="70" y="102" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="9">RFC 6902</text>
+
+    <rect x="140" y="60" width="100" height="60" rx="6" fill="rgba(255,255,255,0.15)"/>
+    <text x="190" y="85" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Patch</text>
+    <text x="190" y="102" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="9">RFC 7396</text>
+
+    <rect x="260" y="60" width="100" height="60" rx="6" fill="rgba(255,255,255,0.15)"/>
+    <text x="310" y="85" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="11" font-weight="bold">Merge</text>
+    <text x="310" y="102" text-anchor="middle" fill="#ddd" font-family="Arial, sans-serif" font-size="9">LWW/Max/Add</text>
+  </g>
+
+  <!-- Arrow from Tape to CRDT -->
+  <path d="M 520 220 L 520 240 L 580 250" stroke="#888" stroke-width="2" fill="none" marker-end="url(#arrow2)"/>
+
+  <!-- Tape Pool -->
+  <g transform="translate(50, 250)">
+    <rect x="0" y="0" width="280" height="140" rx="10" fill="#1a1a2e" stroke="#667eea" stroke-width="2"/>
+    <text x="140" y="30" text-anchor="middle" fill="#667eea" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Tape Pool</text>
+    <line x1="20" y1="45" x2="260" y2="45" stroke="#333" stroke-width="1"/>
+
+    <!-- Pool types -->
+    <text x="30" y="70" fill="#888" font-family="Arial, sans-serif" font-size="11">ThreadLocal:</text>
+    <text x="150" y="70" fill="#43e97b" font-family="Arial, sans-serif" font-size="11">~9.7ns acquire</text>
+
+    <text x="30" y="92" fill="#888" font-family="Arial, sans-serif" font-size="11">Shared:</text>
+    <text x="150" y="92" fill="#43e97b" font-family="Arial, sans-serif" font-size="11">~15ns acquire</text>
+
+    <text x="30" y="114" fill="#888" font-family="Arial, sans-serif" font-size="11">Eviction:</text>
+    <text x="150" y="114" fill="#aaa" font-family="Arial, sans-serif" font-size="11">LRU / Size / TTL</text>
+  </g>
+
+  <!-- Arrow from Pool to Parser -->
+  <path d="M 190 250 L 190 220 L 255 150" stroke="#667eea" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+  <text x="165" y="185" fill="#667eea" font-family="Arial, sans-serif" font-size="9">reuse</text>
+</svg>

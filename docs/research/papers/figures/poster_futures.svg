@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400">
+  <defs>
+    <linearGradient id="futureNow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#43e97b"/>
+      <stop offset="100%" style="stop-color:#38f9d7"/>
+    </linearGradient>
+    <linearGradient id="futureNext" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="futureLater" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f093fb"/>
+      <stop offset="100%" style="stop-color:#f5576c"/>
+    </linearGradient>
+    <filter id="futureShadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="400" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">Future Directions</text>
+  <text x="450" y="55" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Roadmap for continued development</text>
+
+  <!-- Timeline line -->
+  <line x1="100" y1="100" x2="800" y2="100" stroke="#333" stroke-width="3"/>
+
+  <!-- Timeline markers -->
+  <circle cx="200" cy="100" r="12" fill="url(#futureNow)"/>
+  <circle cx="450" cy="100" r="12" fill="url(#futureNext)"/>
+  <circle cx="700" cy="100" r="12" fill="url(#futureLater)"/>
+
+  <!-- Phase labels -->
+  <text x="200" y="80" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Current</text>
+  <text x="450" y="80" text-anchor="middle" fill="#764ba2" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Near-term</text>
+  <text x="700" y="80" text-anchor="middle" fill="#f5576c" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Long-term</text>
+
+  <!-- Current Phase Items -->
+  <g transform="translate(100, 130)">
+    <rect x="0" y="0" width="200" height="230" rx="10" fill="#1a1a2e" stroke="#43e97b" stroke-width="2"/>
+    <text x="100" y="30" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Implemented</text>
+    <line x1="20" y1="45" x2="180" y2="45" stroke="#333" stroke-width="1"/>
+
+    <circle cx="25" cy="70" r="5" fill="#43e97b"/>
+    <text x="40" y="75" fill="#aaa" font-family="Arial, sans-serif" font-size="11">SIMD parsing</text>
+
+    <circle cx="25" cy="95" r="5" fill="#43e97b"/>
+    <text x="40" y="100" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Schema-guided skip</text>
+
+    <circle cx="25" cy="120" r="5" fill="#43e97b"/>
+    <text x="40" y="125" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Tape pooling</text>
+
+    <circle cx="25" cy="145" r="5" fill="#43e97b"/>
+    <text x="40" y="150" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Zero-copy output</text>
+
+    <circle cx="25" cy="170" r="5" fill="#43e97b"/>
+    <text x="40" y="175" fill="#aaa" font-family="Arial, sans-serif" font-size="11">RFC 6902/7396</text>
+
+    <circle cx="25" cy="195" r="5" fill="#43e97b"/>
+    <text x="40" y="200" fill="#aaa" font-family="Arial, sans-serif" font-size="11">CRDT merge tables</text>
+  </g>
+
+  <!-- Near-term Phase Items -->
+  <g transform="translate(350, 130)">
+    <rect x="0" y="0" width="200" height="230" rx="10" fill="#1a1a2e" stroke="#764ba2" stroke-width="2"/>
+    <text x="100" y="30" text-anchor="middle" fill="#764ba2" font-family="Arial, sans-serif" font-size="13" font-weight="bold">In Progress</text>
+    <line x1="20" y1="45" x2="180" y2="45" stroke="#333" stroke-width="1"/>
+
+    <circle cx="25" cy="70" r="5" fill="#feca57"/>
+    <text x="40" y="75" fill="#aaa" font-family="Arial, sans-serif" font-size="11">ARM NEON port</text>
+
+    <circle cx="25" cy="95" r="5" fill="#feca57"/>
+    <text x="40" y="100" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Full JSONPath support</text>
+
+    <circle cx="25" cy="120" r="5" fill="#feca57"/>
+    <text x="40" y="125" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Streaming gron</text>
+
+    <circle cx="25" cy="145" r="5" fill="#feca57"/>
+    <text x="40" y="150" fill="#aaa" font-family="Arial, sans-serif" font-size="11">WASM target</text>
+
+    <circle cx="25" cy="170" r="5" fill="#feca57"/>
+    <text x="40" y="175" fill="#aaa" font-family="Arial, sans-serif" font-size="11">C/FFI bindings</text>
+
+    <circle cx="25" cy="195" r="5" fill="#feca57"/>
+    <text x="40" y="200" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Python bindings</text>
+  </g>
+
+  <!-- Long-term Phase Items -->
+  <g transform="translate(600, 130)">
+    <rect x="0" y="0" width="200" height="230" rx="10" fill="#1a1a2e" stroke="#f5576c" stroke-width="2"/>
+    <text x="100" y="30" text-anchor="middle" fill="#f5576c" font-family="Arial, sans-serif" font-size="13" font-weight="bold">Exploration</text>
+    <line x1="20" y1="45" x2="180" y2="45" stroke="#333" stroke-width="1"/>
+
+    <circle cx="25" cy="70" r="5" fill="#888"/>
+    <text x="40" y="75" fill="#aaa" font-family="Arial, sans-serif" font-size="11">GPU acceleration</text>
+
+    <circle cx="25" cy="95" r="5" fill="#888"/>
+    <text x="40" y="100" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Distributed CRDT</text>
+
+    <circle cx="25" cy="120" r="5" fill="#888"/>
+    <text x="40" y="125" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Schema inference</text>
+
+    <circle cx="25" cy="145" r="5" fill="#888"/>
+    <text x="40" y="150" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Compression</text>
+
+    <circle cx="25" cy="170" r="5" fill="#888"/>
+    <text x="40" y="175" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Binary protocols</text>
+
+    <circle cx="25" cy="195" r="5" fill="#888"/>
+    <text x="40" y="200" fill="#aaa" font-family="Arial, sans-serif" font-size="11">Formal verification</text>
+  </g>
+</svg>

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300">
+  <!-- Clean, print-friendly memory hierarchy -->
+  <rect width="600" height="300" fill="white"/>
+
+  <!-- Title -->
+  <text x="300" y="25" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="bold">Memory Hierarchy: The Wall</text>
+
+  <!-- Pyramid -->
+  <g transform="translate(50, 50)">
+    <!-- L1 -->
+    <polygon points="250,0 300,40 200,40" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="250" y="28" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">L1</text>
+
+    <!-- L2 -->
+    <polygon points="200,45 300,45 330,85 170,85" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="250" y="72" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">L2</text>
+
+    <!-- L3 -->
+    <polygon points="170,90 330,90 370,130 130,130" fill="white" stroke="#333" stroke-width="1.5"/>
+    <text x="250" y="117" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold">L3</text>
+
+    <!-- RAM -->
+    <polygon points="130,135 370,135 420,185 80,185" fill="#eee" stroke="#333" stroke-width="1.5"/>
+    <text x="250" y="167" text-anchor="middle" font-family="Arial" font-size="11" font-weight="bold">RAM</text>
+  </g>
+
+  <!-- Stats table -->
+  <g transform="translate(380, 60)">
+    <text x="0" y="0" font-family="Arial" font-size="11" font-weight="bold" fill="#333">Latency</text>
+    <line x1="0" y1="8" x2="170" y2="8" stroke="#333" stroke-width="0.5"/>
+
+    <text x="0" y="28" font-family="Arial" font-size="10" fill="#333">L1:</text>
+    <text x="40" y="28" font-family="Arial" font-size="10" fill="#333">1 ns</text>
+    <text x="100" y="28" font-family="Arial" font-size="10" fill="#666">(4 cycles)</text>
+
+    <text x="0" y="48" font-family="Arial" font-size="10" fill="#333">L2:</text>
+    <text x="40" y="48" font-family="Arial" font-size="10" fill="#333">4 ns</text>
+    <text x="100" y="48" font-family="Arial" font-size="10" fill="#666">(16 cycles)</text>
+
+    <text x="0" y="68" font-family="Arial" font-size="10" fill="#333">L3:</text>
+    <text x="40" y="68" font-family="Arial" font-size="10" fill="#333">15 ns</text>
+    <text x="100" y="68" font-family="Arial" font-size="10" fill="#666">(60 cycles)</text>
+
+    <text x="0" y="88" font-family="Arial" font-size="10" fill="#333">RAM:</text>
+    <text x="40" y="88" font-family="Arial" font-size="10" fill="#333">80 ns</text>
+    <text x="100" y="88" font-family="Arial" font-size="10" fill="#666">(320 cycles)</text>
+
+    <line x1="0" y1="100" x2="170" y2="100" stroke="#333" stroke-width="0.5"/>
+    <text x="0" y="120" font-family="Arial" font-size="10" font-weight="bold" fill="#333">L1 is 80× faster than RAM</text>
+  </g>
+
+  <!-- Key insight -->
+  <text x="300" y="275" text-anchor="middle" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#333">Design for the cache hierarchy, not the instruction set</text>
+</svg>

@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 420">
+  <!-- Clean, print-friendly roofline -->
+  <rect width="600" height="420" fill="white"/>
+
+  <!-- Title -->
+  <text x="300" y="30" text-anchor="middle" font-family="Georgia, serif" font-size="16" font-weight="bold">Optimization Progress: 712× from Baseline</text>
+
+  <!-- Chart area -->
+  <g transform="translate(80, 60)">
+    <!-- Axes -->
+    <line x1="0" y1="300" x2="480" y2="300" stroke="#333" stroke-width="1.5"/>
+    <line x1="0" y1="0" x2="0" y2="300" stroke="#333" stroke-width="1.5"/>
+
+    <!-- Y-axis labels (log scale) -->
+    <text x="-10" y="300" text-anchor="end" font-family="Arial" font-size="10" fill="#333">0.1</text>
+    <text x="-10" y="240" text-anchor="end" font-family="Arial" font-size="10" fill="#333">1</text>
+    <text x="-10" y="180" text-anchor="end" font-family="Arial" font-size="10" fill="#333">10</text>
+    <text x="-10" y="120" text-anchor="end" font-family="Arial" font-size="10" fill="#333">100</text>
+    <text x="-10" y="60" text-anchor="end" font-family="Arial" font-size="10" fill="#333">1000</text>
+
+    <!-- Y-axis title -->
+    <text x="-50" y="150" text-anchor="middle" font-family="Arial" font-size="11" fill="#333" transform="rotate(-90, -50, 150)">Throughput (GB/s)</text>
+
+    <!-- Terascale target line (dotted) -->
+    <line x1="0" y1="15" x2="480" y2="15" stroke="#999" stroke-width="1.5" stroke-dasharray="8,4"/>
+    <text x="485" y="18" font-family="Arial" font-size="9" fill="#666">1 TB/s (terascale)</text>
+
+    <!-- Current system ceiling (DDR4 + AVX2) -->
+    <line x1="350" y1="55" x2="480" y2="55" stroke="#333" stroke-width="2"/>
+    <text x="415" y="48" text-anchor="middle" font-family="Arial" font-size="9" fill="#333">DDR4 ceiling</text>
+
+    <!-- Memory bandwidth slope (current system) -->
+    <line x1="0" y1="280" x2="350" y2="55" stroke="#333" stroke-width="2"/>
+    <text x="120" y="195" font-family="Arial" font-size="9" fill="#666" transform="rotate(-33, 120, 195)">Memory bandwidth limit</text>
+
+    <!-- Progress points -->
+    <!-- serde_json: 0.4 GB/s -->
+    <circle cx="60" cy="260" r="6" fill="white" stroke="#333" stroke-width="2"/>
+    <text x="60" y="280" text-anchor="middle" font-family="Arial" font-size="9" fill="#333">serde</text>
+    <text x="60" y="291" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">0.4 GB/s</text>
+
+    <!-- simd-json: 2.5 GB/s -->
+    <circle cx="140" cy="210" r="6" fill="white" stroke="#333" stroke-width="2"/>
+    <text x="140" y="230" text-anchor="middle" font-family="Arial" font-size="9" fill="#333">simd-json</text>
+    <text x="140" y="241" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">2.5 GB/s</text>
+
+    <!-- fionn single: 10.5 GB/s -->
+    <circle cx="220" cy="150" r="7" fill="#333" stroke="#333" stroke-width="2"/>
+    <text x="220" y="170" text-anchor="middle" font-family="Arial" font-size="9" fill="#333">fionn</text>
+    <text x="220" y="181" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">10.5 GB/s</text>
+
+    <!-- fionn parallel: 285 GB/s -->
+    <circle cx="340" cy="70" r="8" fill="#333" stroke="#333" stroke-width="2"/>
+    <text x="340" y="90" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold" fill="#333">parallel</text>
+    <text x="340" y="101" text-anchor="middle" font-family="Arial" font-size="8" fill="#666">285 GB/s</text>
+
+    <!-- Arrows showing progression -->
+    <path d="M 68 257 Q 100 235 132 213" stroke="#333" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
+    <path d="M 148 207 Q 180 180 212 155" stroke="#333" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
+    <path d="M 228 145 Q 280 110 332 75" stroke="#333" stroke-width="1" fill="none" marker-end="url(#arrow)"/>
+
+    <!-- Arrow to terascale (dashed) -->
+    <path d="M 348 62 Q 380 40 420 22" stroke="#666" stroke-width="1" stroke-dasharray="4,2" fill="none" marker-end="url(#arrow-gray)"/>
+    <text x="400" y="38" font-family="Arial" font-size="8" fill="#666">~3.5×</text>
+
+    <!-- Arrow markers -->
+    <defs>
+      <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0 0, 6 3, 0 6" fill="#333"/>
+      </marker>
+      <marker id="arrow-gray" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0 0, 6 3, 0 6" fill="#666"/>
+      </marker>
+    </defs>
+
+    <!-- Speedup annotations -->
+    <text x="105" y="225" font-family="Arial" font-size="8" fill="#333">6×</text>
+    <text x="185" y="170" font-family="Arial" font-size="8" fill="#333">4×</text>
+    <text x="290" y="100" font-family="Arial" font-size="8" fill="#333">27×</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(80, 385)">
+    <text x="0" y="0" font-family="Arial" font-size="10" fill="#333">Achieved: 712× from baseline</text>
+    <text x="200" y="0" font-family="Arial" font-size="10" fill="#666">| Target: 1 TB/s with AVX-512 + DDR5</text>
+  </g>
+</svg>

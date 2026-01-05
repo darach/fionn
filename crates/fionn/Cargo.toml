@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "fionn - A Swiss Army knife for JSON with SIMD acceleration"
+readme = "../../README.md"
+keywords = ["json", "simd", "gron", "diff", "crdt"]
+categories = ["parsing", "encoding"]
+
+[lib]
+name = "fionn"
+path = "src/lib.rs"
+
+[dependencies]
+fionn-core = { path = "../fionn-core", version = "0.1.0" }
+fionn-tape = { path = "../fionn-tape", version = "0.1.0" }
+fionn-simd = { path = "../fionn-simd", version = "0.1.0" }
+fionn-ops = { path = "../fionn-ops", version = "0.1.0" }
+fionn-stream = { path = "../fionn-stream", version = "0.1.0" }
+fionn-gron = { path = "../fionn-gron", version = "0.1.0" }
+fionn-diff = { path = "../fionn-diff", version = "0.1.0" }
+fionn-crdt = { path = "../fionn-crdt", version = "0.1.0" }
+fionn-pool = { path = "../fionn-pool", version = "0.1.0" }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+simd-json = "0.14"
+sonic-rs = "0.3"
+proptest = "1.5"
+proptest-derive = "0.5"
+arbitrary = { version = "1.4", features = ["derive"] }
+rayon = "1.10"
+ahash = "=0.8.11"
+json-patch = "3.0"
+
+[lints]
+workspace = true
+
+# Benchmarks
+[[bench]]
+name = "comprehensive_benchmarks"
+harness = false
+path = "../../benches/comprehensive_benchmarks.rs"
+
+[[bench]]
+name = "causal_research"
+harness = false
+path = "../../benches/causal_research.rs"
+
+[[bench]]
+name = "diff_benchmark"
+harness = false
+path = "../../benches/diff_benchmark.rs"
+
+[[bench]]
+name = "gron_benchmark"
+harness = false
+path = "../../benches/gron_benchmark.rs"
+
+[[bench]]
+name = "gron_comparison"
+harness = false
+path = "../../benches/gron_comparison.rs"
+
+[[bench]]
+name = "gron_optimizations"
+harness = false
+path = "../../benches/gron_optimizations.rs"
+
+[[bench]]
+name = "optimized_merge"
+harness = false
+path = "../../benches/optimized_merge.rs"
+
+[[bench]]
+name = "path_parsing"
+harness = false
+path = "../../benches/path_parsing.rs"
+
+[[bench]]
+name = "path_parsing_full"
+harness = false
+path = "../../benches/path_parsing_full.rs"
+
+[[bench]]
+name = "pool_zerocopy_benchmark"
+harness = false
+path = "../../benches/pool_zerocopy_benchmark.rs"
+
+[[bench]]
+name = "simd_jsonl_bench"
+harness = false
+path = "../../benches/simd_jsonl_bench.rs"
+
+[[bench]]
+name = "skiptape"
+harness = false
+path = "../../benches/skiptape.rs"
+
+[[bench]]
+name = "tape_serialization"
+harness = false
+path = "../../benches/tape_serialization.rs"
+
+[[bench]]
+name = "schema_selectivity"
+harness = false
+path = "../../benches/schema_selectivity.rs"

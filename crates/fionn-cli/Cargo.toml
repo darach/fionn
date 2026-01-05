@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "fionn CLI - A Swiss Army knife for JSON with SIMD acceleration"
+readme = "README.md"
+keywords = ["json", "simd", "gron", "diff", "cli"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "fionn"
+path = "src/main.rs"
+
+[[bin]]
+name = "simd-gron"
+path = "src/simd_gron.rs"
+
+[[bin]]
+name = "gpu-jsonl"
+path = "src/gpu_jsonl_runner.rs"
+
+[[bin]]
+name = "fuzz_tape"
+path = "../../fuzz/targets/fuzz_tape.rs"
+required-features = ["afl-fuzz"]
+
+[[bin]]
+name = "fuzz_diff"
+path = "../../fuzz/targets/fuzz_diff.rs"
+required-features = ["afl-fuzz"]
+
+[[bin]]
+name = "fuzz_gron"
+path = "../../fuzz/targets/fuzz_gron.rs"
+required-features = ["afl-fuzz"]
+
+[[bin]]
+name = "fuzz_classify"
+path = "../../fuzz/targets/fuzz_classify.rs"
+required-features = ["afl-fuzz"]
+
+[[bin]]
+name = "fuzz_path"
+path = "../../fuzz/targets/fuzz_path.rs"
+required-features = ["afl-fuzz"]
+
+[[bin]]
+name = "fuzz_jsonl"
+path = "../../fuzz/targets/fuzz_jsonl.rs"
+required-features = ["afl-fuzz"]
+
+[features]
+gpu = []
+afl-fuzz = ["dep:afl"]
+
+[dependencies]
+fionn-core = { path = "../fionn-core", version = "0.1.0" }
+fionn-tape = { path = "../fionn-tape", version = "0.1.0" }
+fionn-ops = { path = "../fionn-ops", version = "0.1.0" }
+fionn-stream = { path = "../fionn-stream", version = "0.1.0" }
+fionn-gron = { path = "../fionn-gron", version = "0.1.0" }
+fionn-diff = { path = "../fionn-diff", version = "0.1.0" }
+fionn-crdt = { path = "../fionn-crdt", version = "0.1.0" }
+fionn-pool = { path = "../fionn-pool", version = "0.1.0" }
+fionn-simd = { path = "../fionn-simd", version = "0.1.0" }
+clap = { version = "4.5", features = ["derive"] }
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+memchr = "2.7"
+afl = { version = "0.15", optional = true }
+
+[lints]
+workspace = true

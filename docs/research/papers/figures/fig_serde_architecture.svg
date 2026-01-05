@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 550">
+  <defs>
+    <linearGradient id="serdeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="simdGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#1e8449"/>
+    </linearGradient>
+    <linearGradient id="sharedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3498db"/>
+      <stop offset="100%" style="stop-color:#2980b9"/>
+    </linearGradient>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7f8c8d"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="550" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    serde vs fionn: Architecture Comparison
+  </text>
+
+  <!-- Left side: serde architecture -->
+  <g transform="translate(50, 60)">
+    <text x="175" y="20" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#c0392b">
+      serde (Scalar)
+    </text>
+
+    <!-- Input JSON -->
+    <rect x="100" y="40" width="150" height="40" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2" rx="5"/>
+    <text x="175" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">JSON Input</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="80" x2="175" y2="100" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- serde_json parser -->
+    <rect x="75" y="105" width="200" height="50" fill="url(#serdeGrad)" stroke="#c0392b" stroke-width="2" rx="5"/>
+    <text x="175" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">serde_json Parser</text>
+    <text x="175" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(Scalar, All Fields)</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="155" x2="175" y2="175" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- DOM Tree -->
+    <rect x="75" y="180" width="200" height="50" fill="url(#serdeGrad)" stroke="#c0392b" stroke-width="2" rx="5"/>
+    <text x="175" y="203" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">DOM Tree</text>
+    <text x="175" y="220" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(serde_json::Value)</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="230" x2="175" y2="250" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Runtime String Parsing -->
+    <rect x="50" y="255" width="250" height="50" fill="url(#serdeGrad)" stroke="#c0392b" stroke-width="2" rx="5"/>
+    <text x="175" y="278" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">Runtime String Parsing</text>
+    <text x="175" y="295" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(str::parse on each merge)</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="305" x2="175" y2="325" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Merge Logic -->
+    <rect x="75" y="330" width="200" height="50" fill="url(#sharedGrad)" stroke="#2980b9" stroke-width="2" rx="5"/>
+    <text x="175" y="353" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">CRDT Merge Logic</text>
+    <text x="175" y="370" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(LWW, Max, Min, Additive)</text>
+
+    <!-- Bottleneck annotations -->
+    <text x="300" y="130" font-family="Arial, sans-serif" font-size="9" fill="#c0392b">← Parses ALL fields</text>
+    <text x="300" y="280" font-family="Arial, sans-serif" font-size="9" fill="#c0392b">← Parses EVERY merge</text>
+  </g>
+
+  <!-- Right side: fionn architecture -->
+  <g transform="translate(500, 60)">
+    <text x="175" y="20" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#1e8449">
+      fionn (SIMD)
+    </text>
+
+    <!-- Input JSON -->
+    <rect x="100" y="40" width="150" height="40" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2" rx="5"/>
+    <text x="175" y="65" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">JSON Input</text>
+
+    <!-- Operations -->
+    <rect x="270" y="40" width="100" height="40" fill="#f39c12" stroke="#d68910" stroke-width="2" rx="5"/>
+    <text x="320" y="60" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white" font-weight="bold">CRDT Ops</text>
+    <text x="320" y="73" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="white">(schema source)</text>
+
+    <!-- Arrow from ops to schema -->
+    <line x1="320" y1="80" x2="320" y2="105" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <line x1="320" y1="105" x2="260" y2="105" stroke="#7f8c8d" stroke-width="2"/>
+    <line x1="260" y1="105" x2="260" y2="123" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Compiled Schema -->
+    <rect x="200" y="105" width="120" height="35" fill="#f39c12" stroke="#d68910" stroke-width="2" rx="5"/>
+    <text x="260" y="127" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white" font-weight="bold">Compiled Schema</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="80" x2="175" y2="155" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- SIMD Skip Parser -->
+    <rect x="50" y="160" width="250" height="50" fill="url(#simdGrad)" stroke="#1e8449" stroke-width="2" rx="5"/>
+    <text x="175" y="183" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">SIMD Skip Parser</text>
+    <text x="175" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(Only matching fields)</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="210" x2="175" y2="230" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Skip Tape -->
+    <rect x="75" y="235" width="200" height="50" fill="url(#simdGrad)" stroke="#1e8449" stroke-width="2" rx="5"/>
+    <text x="175" y="258" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">Skip Tape</text>
+    <text x="175" y="275" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(Indexed + Pre-parsed)</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="285" x2="175" y2="305" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Pre-parsed Merge Table -->
+    <rect x="50" y="310" width="250" height="50" fill="url(#simdGrad)" stroke="#1e8449" stroke-width="2" rx="5"/>
+    <text x="175" y="333" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">Pre-parsed Merge Table</text>
+    <text x="175" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(O(1) lookup, no parsing)</text>
+
+    <!-- Arrow -->
+    <line x1="175" y1="360" x2="175" y2="380" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+    <!-- Merge Logic -->
+    <rect x="75" y="385" width="200" height="50" fill="url(#sharedGrad)" stroke="#2980b9" stroke-width="2" rx="5"/>
+    <text x="175" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">CRDT Merge Logic</text>
+    <text x="175" y="425" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" fill="white">(LWW, Max, Min, Additive)</text>
+
+    <!-- Win annotations -->
+    <text x="320" y="188" font-family="Arial, sans-serif" font-size="9" fill="#1e8449">← Skips 99% of fields</text>
+    <text x="320" y="338" font-family="Arial, sans-serif" font-size="9" fill="#1e8449">← Parse once, merge many</text>
+  </g>
+
+  <!-- Center comparison -->
+  <g transform="translate(370, 200)">
+    <rect x="0" y="0" width="160" height="180" fill="#fff" stroke="#bdc3c7" stroke-width="2" rx="10"/>
+    <text x="80" y="25" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2c3e50">Comparison</text>
+
+    <line x1="10" y1="35" x2="150" y2="35" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="15" y="55" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50" font-weight="bold">Parsing:</text>
+    <text x="15" y="70" font-family="Arial, sans-serif" font-size="9" fill="#c0392b">serde: All fields</text>
+    <text x="15" y="85" font-family="Arial, sans-serif" font-size="9" fill="#1e8449">simd: Schema fields</text>
+
+    <text x="15" y="105" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50" font-weight="bold">Merge:</text>
+    <text x="15" y="120" font-family="Arial, sans-serif" font-size="9" fill="#c0392b">serde: Parse each time</text>
+    <text x="15" y="135" font-family="Arial, sans-serif" font-size="9" fill="#1e8449">simd: Pre-parsed table</text>
+
+    <text x="15" y="155" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50" font-weight="bold">Result:</text>
+    <text x="15" y="170" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6" font-weight="bold">35-169× faster merges</text>
+  </g>
+
+  <!-- Bottom: Shared CRDT Semantics -->
+  <g transform="translate(150, 475)">
+    <rect x="0" y="0" width="600" height="50" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="2" rx="5"/>
+    <text x="300" y="20" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2c3e50">
+      Shared: Delta-State CRDT Semantics
+    </text>
+    <text x="300" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">
+      Vector Clocks · Observed-Remove · Causality Tracking · Same Merge Outcomes
+    </text>
+  </g>
+</svg>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <linearGradient id="baselineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="optimizedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#1e8449"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="500" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    Merge Strategy Performance: serde-style vs fionn
+  </text>
+  <text x="450" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7f8c8d">
+    1000 elements per merge operation · Lower is better
+  </text>
+
+  <!-- Chart area -->
+  <g transform="translate(120, 80)">
+    <!-- Y-axis (log scale conceptually, but linear for simplicity) -->
+    <line x1="0" y1="0" x2="0" y2="300" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- Y-axis labels -->
+    <text x="-10" y="300" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">0</text>
+    <text x="-10" y="240" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">10 µs</text>
+    <text x="-10" y="180" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">20 µs</text>
+    <text x="-10" y="120" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">30 µs</text>
+    <text x="-10" y="60" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">40 µs</text>
+    <text x="-10" y="0" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">50+ µs</text>
+
+    <text x="-60" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" transform="rotate(-90, -60, 150)">
+      Latency (µs)
+    </text>
+
+    <!-- Gridlines -->
+    <line x1="0" y1="240" x2="650" y2="240" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="0" y1="180" x2="650" y2="180" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="0" y1="120" x2="650" y2="120" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="0" y1="60" x2="650" y2="60" stroke="#ecf0f1" stroke-width="1"/>
+
+    <!-- X-axis -->
+    <line x1="0" y1="300" x2="650" y2="300" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- LWW Merge -->
+    <g transform="translate(40, 0)">
+      <!-- Baseline: 11.77 µs = height ~70 -->
+      <rect x="0" y="230" width="50" height="70" fill="url(#baselineGrad)" rx="3"/>
+      <text x="25" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#c0392b" font-weight="bold">11.77µs</text>
+
+      <!-- Optimized: 335.7 ns = height ~2 (barely visible) -->
+      <rect x="60" y="298" width="50" height="2" fill="url(#optimizedGrad)" rx="1"/>
+      <text x="85" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1e8449" font-weight="bold">336ns</text>
+
+      <!-- Speedup badge -->
+      <rect x="30" y="310" width="60" height="20" fill="#3498db" rx="10"/>
+      <text x="60" y="324" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">35×</text>
+
+      <text x="55" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" font-weight="bold">LWW</text>
+    </g>
+
+    <!-- Max Merge -->
+    <g transform="translate(200, 0)">
+      <!-- Baseline: 18.99 µs = height ~114 -->
+      <rect x="0" y="186" width="50" height="114" fill="url(#baselineGrad)" rx="3"/>
+      <text x="25" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#c0392b" font-weight="bold">18.99µs</text>
+
+      <!-- Optimized: 1.15 µs = height ~7 -->
+      <rect x="60" y="293" width="50" height="7" fill="url(#optimizedGrad)" rx="2"/>
+      <text x="85" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1e8449" font-weight="bold">1.15µs</text>
+
+      <!-- Speedup badge -->
+      <rect x="30" y="310" width="60" height="20" fill="#3498db" rx="10"/>
+      <text x="60" y="324" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">16.5×</text>
+
+      <text x="55" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" font-weight="bold">Max</text>
+    </g>
+
+    <!-- Min Merge -->
+    <g transform="translate(360, 0)">
+      <!-- Baseline: 18.99 µs = height ~114 -->
+      <rect x="0" y="186" width="50" height="114" fill="url(#baselineGrad)" rx="3"/>
+      <text x="25" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#c0392b" font-weight="bold">18.99µs</text>
+
+      <!-- Optimized: 1.15 µs = height ~7 -->
+      <rect x="60" y="293" width="50" height="7" fill="url(#optimizedGrad)" rx="2"/>
+      <text x="85" y="285" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1e8449" font-weight="bold">1.15µs</text>
+
+      <!-- Speedup badge -->
+      <rect x="30" y="310" width="60" height="20" fill="#3498db" rx="10"/>
+      <text x="60" y="324" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">16.5×</text>
+
+      <text x="55" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" font-weight="bold">Min</text>
+    </g>
+
+    <!-- Additive Merge -->
+    <g transform="translate(520, 0)">
+      <!-- Baseline: 52.88 µs = off scale, cap at top -->
+      <rect x="0" y="0" width="50" height="300" fill="url(#baselineGrad)" rx="3"/>
+      <text x="25" y="-5" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#c0392b" font-weight="bold">52.88µs</text>
+
+      <!-- Optimized: 312 ns = height ~2 -->
+      <rect x="60" y="298" width="50" height="2" fill="url(#optimizedGrad)" rx="1"/>
+      <text x="85" y="290" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#1e8449" font-weight="bold">312ns</text>
+
+      <!-- Speedup badge -->
+      <rect x="30" y="310" width="60" height="20" fill="#9b59b6" rx="10"/>
+      <text x="60" y="324" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="white" font-weight="bold">169×</text>
+
+      <text x="55" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" font-weight="bold">Additive</text>
+    </g>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(600, 100)">
+    <rect x="0" y="0" width="180" height="60" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <rect x="15" y="15" width="20" height="12" fill="url(#baselineGrad)" rx="2"/>
+    <text x="45" y="25" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">serde-style (baseline)</text>
+    <rect x="15" y="35" width="20" height="12" fill="url(#optimizedGrad)" rx="2"/>
+    <text x="45" y="45" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">fionn (optimized)</text>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(50, 430)">
+    <rect x="0" y="0" width="800" height="60" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <text x="15" y="20" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2c3e50">Key Insight:</text>
+    <text x="15" y="38" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Additive shows 169× improvement because both parsing AND result serialization are eliminated
+    </text>
+    <text x="15" y="52" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Pre-parsed merge tables enable direct integer/float comparison without string parsing at merge time
+    </text>
+  </g>
+</svg>

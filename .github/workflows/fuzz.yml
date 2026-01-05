@@ -1,0 +1,93 @@
+name: Fuzz Testing
+
+on:
+  # Run weekly
+  schedule:
+    - cron: '0 0 * * 0'
+  # Allow manual runs
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: 'Fuzz duration (e.g., 5m, 1h)'
+        required: false
+        default: '10m'
+      target:
+        description: 'Fuzz target (tape, path, jsonl, classify, diff, gron, all)'
+        required: false
+        default: 'all'
+
+permissions:
+  contents: read
+  security-events: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [tape, path, jsonl, classify]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install AFL++
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y afl++
+
+      - name: Install cargo-afl
+        run: cargo install cargo-afl --locked
+
+      - name: Build AFL++
+        run: cargo afl config --build --force
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+
+      - name: Build fuzz target
+        run: cargo afl build --release --features afl-fuzz --bin fuzz_${{ matrix.target }}
+
+      - name: Run fuzzer
+        run: |
+          mkdir -p fuzz/output/${{ matrix.target }}
+          export AFL_SKIP_CPUFREQ=1
+          export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
+          timeout ${{ github.event.inputs.duration || '10m' }} \
+            cargo afl fuzz \
+              -i fuzz/corpus/${{ matrix.target }} \
+              -o fuzz/output/${{ matrix.target }} \
+              target/release/fuzz_${{ matrix.target }} || true
+
+      - name: Check for crashes
+        id: crashes
+        run: |
+          CRASH_DIR="fuzz/output/${{ matrix.target }}/default/crashes"
+          if [ -d "$CRASH_DIR" ] && [ "$(ls -A $CRASH_DIR 2>/dev/null)" ]; then
+            echo "crashes_found=true" >> $GITHUB_OUTPUT
+            echo "::warning::Crashes found in ${{ matrix.target }} fuzzing"
+          else
+            echo "crashes_found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload crash artifacts
+        if: steps.crashes.outputs.crashes_found == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: crashes-${{ matrix.target }}
+          path: fuzz/output/${{ matrix.target }}/default/crashes/
+          retention-days: 30
+
+      - name: Upload corpus
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: corpus-${{ matrix.target }}
+          path: fuzz/output/${{ matrix.target }}/default/queue/
+          retention-days: 7

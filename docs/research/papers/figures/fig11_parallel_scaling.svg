@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450">
+  <defs>
+    <linearGradient id="idealGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#2ecc71"/>
+    </linearGradient>
+    <linearGradient id="actualGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3498db"/>
+      <stop offset="100%" style="stop-color:#2980b9"/>
+    </linearGradient>
+    <linearGradient id="bwLimitGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="450" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    Parallel Scaling: Ideal vs. Memory-Bounded Reality
+  </text>
+  <text x="450" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7f8c8d">
+    fionn parallel batch processing with Rayon work-stealing
+  </text>
+
+  <!-- Chart area -->
+  <g transform="translate(100, 80)">
+    <!-- Axes -->
+    <line x1="0" y1="0" x2="0" y2="280" stroke="#bdc3c7" stroke-width="2"/>
+    <line x1="0" y1="280" x2="650" y2="280" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- X-axis labels (thread count) -->
+    <text x="0" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">1</text>
+    <text x="162.5" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">4</text>
+    <text x="325" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">8</text>
+    <text x="487.5" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">16</text>
+    <text x="650" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">32</text>
+    <text x="325" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50">
+      Thread Count (Ryzen 9 7950X: 16 cores / 32 threads)
+    </text>
+
+    <!-- Y-axis labels (throughput GB/s) -->
+    <text x="-10" y="280" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">0</text>
+    <text x="-10" y="210" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">50</text>
+    <text x="-10" y="140" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">100</text>
+    <text x="-10" y="70" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">150</text>
+    <text x="-10" y="0" text-anchor="end" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">200</text>
+
+    <text x="-50" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" transform="rotate(-90, -50, 140)">
+      Throughput (GB/s)
+    </text>
+
+    <!-- Gridlines -->
+    <line x1="0" y1="210" x2="650" y2="210" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="0" y1="140" x2="650" y2="140" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="0" y1="70" x2="650" y2="70" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="162.5" y1="0" x2="162.5" y2="280" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="325" y1="0" x2="325" y2="280" stroke="#ecf0f1" stroke-width="1"/>
+    <line x1="487.5" y1="0" x2="487.5" y2="280" stroke="#ecf0f1" stroke-width="1"/>
+
+    <!-- Memory bandwidth ceiling -->
+    <rect x="0" y="0" width="650" height="87" fill="#e74c3c" opacity="0.1"/>
+    <line x1="0" y1="87" x2="650" y2="87" stroke="#e74c3c" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="660" y="91" font-family="Arial, sans-serif" font-size="10" fill="#c0392b">DDR5 Practical: 65 GB/s</text>
+
+    <!-- Ideal linear scaling line (if not memory bound) -->
+    <!-- 1 thread: 12 GB/s, 32 threads: 384 GB/s (off chart) -->
+    <path d="M 0,263 L 162.5,203 L 325,143 L 487.5,83 L 650,23"
+          fill="none" stroke="#27ae60" stroke-width="2" stroke-dasharray="5,3" opacity="0.7"/>
+    <text x="660" y="27" font-family="Arial, sans-serif" font-size="10" fill="#27ae60">Ideal (linear)</text>
+
+    <!-- Actual performance curve (memory bounded) -->
+    <!-- 1: 12, 2: 18, 4: 22, 8: 23, 16: 23.4, 32: 24 (bandwidth saturated) -->
+    <path d="M 0,263
+             Q 81,245 162.5,249
+             Q 244,247 325,247
+             Q 406,246 487.5,246
+             L 650,246"
+          fill="none" stroke="#3498db" stroke-width="3"/>
+
+    <!-- Data points for actual -->
+    <circle cx="0" cy="263" r="6" fill="#3498db"/>
+    <text x="15" y="260" font-family="Arial, sans-serif" font-size="10" fill="#2980b9" font-weight="bold">12</text>
+
+    <circle cx="162.5" cy="249" r="5" fill="#3498db"/>
+    <text x="175" y="246" font-family="Arial, sans-serif" font-size="9" fill="#2980b9">22</text>
+
+    <circle cx="325" cy="247" r="5" fill="#3498db"/>
+    <text x="340" y="244" font-family="Arial, sans-serif" font-size="9" fill="#2980b9">23</text>
+
+    <circle cx="487.5" cy="246" r="5" fill="#3498db"/>
+    <text x="503" y="243" font-family="Arial, sans-serif" font-size="9" fill="#2980b9">23.4</text>
+
+    <circle cx="650" cy="246" r="6" fill="#3498db"/>
+    <text x="620" y="243" font-family="Arial, sans-serif" font-size="10" fill="#2980b9" font-weight="bold">~24</text>
+
+    <!-- Amdahl's Law annotation -->
+    <path d="M 162.5,210 Q 200,180 250,180" fill="none" stroke="#7f8c8d" stroke-width="1"/>
+    <text x="255" y="175" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">Diminishing returns:</text>
+    <text x="255" y="187" font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">4→16 threads = 1.06× gain</text>
+
+    <!-- Gap annotation -->
+    <line x1="500" y1="83" x2="500" y2="246" stroke="#9b59b6" stroke-width="1" stroke-dasharray="3,2"/>
+    <text x="515" y="165" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6" font-weight="bold">Gap: ideal vs actual</text>
+    <text x="515" y="178" font-family="Arial, sans-serif" font-size="9" fill="#9b59b6">Memory bandwidth bound</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(550, 85)">
+    <rect x="0" y="0" width="180" height="70" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <line x1="15" y1="20" x2="45" y2="20" stroke="#27ae60" stroke-width="2" stroke-dasharray="5,3"/>
+    <text x="55" y="24" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">Ideal (linear scaling)</text>
+    <line x1="15" y1="40" x2="45" y2="40" stroke="#3498db" stroke-width="3"/>
+    <text x="55" y="44" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">Actual (measured)</text>
+    <line x1="15" y1="60" x2="45" y2="60" stroke="#e74c3c" stroke-width="2" stroke-dasharray="8,4"/>
+    <text x="55" y="64" font-family="Arial, sans-serif" font-size="10" fill="#2c3e50">DDR5 bandwidth limit</text>
+  </g>
+
+  <!-- Insight box -->
+  <g transform="translate(50, 380)">
+    <rect x="0" y="0" width="800" height="60" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <text x="15" y="18" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2c3e50">Scaling Insight:</text>
+    <text x="15" y="35" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Single thread: 12 GB/s (18% of DDR5 bandwidth) · 4 threads: 22 GB/s (34%) · 16 threads: 23.4 GB/s (36%)
+    </text>
+    <text x="15" y="50" font-family="Arial, sans-serif" font-size="10" fill="#34495e">
+      • Parallel efficiency: 1.95× with 16 cores (not 16×) — memory bandwidth is the bottleneck, not compute
+    </text>
+  </g>
+</svg>

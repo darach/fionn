@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380">
+  <defs>
+    <linearGradient id="baselineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#636e72"/>
+      <stop offset="100%" style="stop-color:#b2bec3"/>
+    </linearGradient>
+    <linearGradient id="optimizedGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#43e97b"/>
+      <stop offset="100%" style="stop-color:#38f9d7"/>
+    </linearGradient>
+    <filter id="mergeShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="380" fill="#0f0f1a"/>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="22" font-weight="bold">CRDT Merge Strategy Speedup</text>
+  <text x="450" y="58" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">Pre-parsed merge tables vs baseline (1000 elements) - Criterion data</text>
+
+  <!-- Chart -->
+  <g transform="translate(50, 90)">
+    <!-- LWW: baseline=13,433ns, optimized=250ns, speedup=53.7× -->
+    <text x="0" y="35" fill="#fa709a" font-family="Arial, sans-serif" font-size="14" font-weight="bold">LWW</text>
+    <rect x="100" y="20" width="268" height="30" rx="4" fill="url(#baselineGrad)" filter="url(#mergeShadow)"/>
+    <text x="380" y="42" fill="#888" font-family="Arial, sans-serif" font-size="11">13,433 ns baseline</text>
+    <rect x="100" y="55" width="5" height="30" rx="4" fill="url(#optimizedGrad)" filter="url(#mergeShadow)"/>
+    <text x="115" y="77" fill="#43e97b" font-family="Arial, sans-serif" font-size="11">250 ns</text>
+    <text x="200" y="77" fill="#43e97b" font-family="Arial, sans-serif" font-size="16" font-weight="bold">53.7×</text>
+
+    <!-- Max: baseline=16,895ns, optimized=339ns, speedup=49.8× -->
+    <text x="0" y="125" fill="#764ba2" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Max</text>
+    <rect x="100" y="110" width="338" height="30" rx="4" fill="url(#baselineGrad)" filter="url(#mergeShadow)"/>
+    <text x="450" y="132" fill="#888" font-family="Arial, sans-serif" font-size="11">16,895 ns baseline</text>
+    <rect x="100" y="145" width="7" height="30" rx="4" fill="url(#optimizedGrad)" filter="url(#mergeShadow)"/>
+    <text x="117" y="167" fill="#43e97b" font-family="Arial, sans-serif" font-size="11">339 ns</text>
+    <text x="200" y="167" fill="#43e97b" font-family="Arial, sans-serif" font-size="16" font-weight="bold">49.8×</text>
+
+    <!-- Additive: baseline=49,060ns, optimized=236ns, speedup=207.5× -->
+    <text x="0" y="215" fill="#00d2ff" font-family="Arial, sans-serif" font-size="14" font-weight="bold">Additive</text>
+    <rect x="100" y="200" width="700" height="30" rx="4" fill="url(#baselineGrad)" filter="url(#mergeShadow)"/>
+    <text x="580" y="222" fill="#888" font-family="Arial, sans-serif" font-size="11">49,060 ns baseline</text>
+    <rect x="100" y="235" width="3" height="30" rx="4" fill="url(#optimizedGrad)" filter="url(#mergeShadow)"/>
+    <text x="113" y="257" fill="#43e97b" font-family="Arial, sans-serif" font-size="11">236 ns</text>
+    <text x="200" y="257" fill="#43e97b" font-family="Arial, sans-serif" font-size="20" font-weight="bold">207×</text>
+  </g>
+
+  <!-- Key insight -->
+  <rect x="150" y="320" width="600" height="45" rx="8" fill="#1a1a2e" stroke="#43e97b" stroke-width="2"/>
+  <text x="450" y="348" text-anchor="middle" fill="#43e97b" font-family="Arial, sans-serif" font-size="13">Pre-parsed integers eliminate both JSON parsing AND serialization overhead</text>
+</svg>

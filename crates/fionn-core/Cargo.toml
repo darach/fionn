@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core types, error handling, and traits for fionn"
+keywords = ["json", "simd", "parsing"]
+categories = ["parsing", "encoding"]
+
+[dependencies]
+thiserror = "2.0"
+serde = { version = "1.0", features = ["derive"] }
+ahash = "=0.8.11"
+smallvec = "1.13"
+regex = "1.10"
+dashmap = "6.1"
+memchr = "2.7"
+
+[lints]
+workspace = true

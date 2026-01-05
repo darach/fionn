@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 450">
+  <defs>
+    <linearGradient id="parseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e74c3c"/>
+      <stop offset="100%" style="stop-color:#c0392b"/>
+    </linearGradient>
+    <linearGradient id="cacheGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#27ae60"/>
+      <stop offset="100%" style="stop-color:#1e8449"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="450" fill="#fafafa"/>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2c3e50">
+    Cache Hit Performance: Parse Time vs Cache Lookup
+  </text>
+  <text x="450" y="50" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#7f8c8d">
+    Lower is better · DashMap concurrent cache with Arc&lt;ParsedPath&gt;
+  </text>
+
+  <!-- Chart area -->
+  <g transform="translate(120, 80)">
+    <!-- Y-axis -->
+    <line x1="0" y1="0" x2="0" y2="280" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- Y-axis labels and gridlines (scale: 0-2500 ns) -->
+    <text x="-10" y="280" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">0</text>
+    <line x1="0" y1="280" x2="650" y2="280" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="224" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">500</text>
+    <line x1="0" y1="224" x2="650" y2="224" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="168" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">1000</text>
+    <line x1="0" y1="168" x2="650" y2="168" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="112" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">1500</text>
+    <line x1="0" y1="112" x2="650" y2="112" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="56" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">2000</text>
+    <line x1="0" y1="56" x2="650" y2="56" stroke="#ecf0f1" stroke-width="1"/>
+
+    <text x="-10" y="0" text-anchor="end" font-family="Arial, sans-serif" font-size="11" fill="#7f8c8d">2500</text>
+    <line x1="0" y1="0" x2="650" y2="0" stroke="#ecf0f1" stroke-width="1"/>
+
+    <!-- Y-axis title -->
+    <text x="-70" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2c3e50" transform="rotate(-90, -70, 140)">
+      Access Time (nanoseconds)
+    </text>
+
+    <!-- Group 1: Short paths -->
+    <!-- Parse: 308.7 ns = 34.5 height -->
+    <rect x="50" y="245.5" width="55" height="34.5" fill="url(#parseGrad)" rx="2"/>
+    <text x="77.5" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#c0392b">309 ns</text>
+
+    <!-- Cache: 94.9 ns = 10.6 height -->
+    <rect x="115" y="269.4" width="55" height="10.6" fill="url(#cacheGrad)" rx="2"/>
+    <text x="142.5" y="264" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1e8449">95 ns</text>
+
+    <!-- Speedup annotation -->
+    <text x="110" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#27ae60" font-weight="bold">3.25x</text>
+    <text x="110" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Short</text>
+
+    <!-- Group 2: Long paths -->
+    <!-- Parse: 811.2 ns = 90.8 height -->
+    <rect x="250" y="189.2" width="55" height="90.8" fill="url(#parseGrad)" rx="2"/>
+    <text x="277.5" y="183" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#c0392b">811 ns</text>
+
+    <!-- Cache: 98.6 ns = 11.0 height -->
+    <rect x="315" y="269.0" width="55" height="11.0" fill="url(#cacheGrad)" rx="2"/>
+    <text x="342.5" y="264" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1e8449">99 ns</text>
+
+    <!-- Speedup annotation -->
+    <text x="310" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#27ae60" font-weight="bold">8.2x</text>
+    <text x="310" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Long</text>
+
+    <!-- Group 3: Very Long paths -->
+    <!-- Parse: 2304.6 ns = 257.9 height -->
+    <rect x="450" y="22.1" width="55" height="257.9" fill="url(#parseGrad)" rx="2"/>
+    <text x="477.5" y="16" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#c0392b">2305 ns</text>
+
+    <!-- Cache: 184.0 ns = 20.6 height -->
+    <rect x="515" y="259.4" width="55" height="20.6" fill="url(#cacheGrad)" rx="2"/>
+    <text x="542.5" y="254" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#1e8449">184 ns</text>
+
+    <!-- Speedup annotation -->
+    <text x="510" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#27ae60" font-weight="bold">12.5x</text>
+    <text x="510" y="325" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">Very Long</text>
+
+    <!-- X-axis -->
+    <line x1="0" y1="280" x2="650" y2="280" stroke="#bdc3c7" stroke-width="2"/>
+
+    <!-- Constant cache time indicator line -->
+    <line x1="0" y1="269" x2="600" y2="269" stroke="#1e8449" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+    <text x="610" y="272" font-family="Arial, sans-serif" font-size="9" fill="#1e8449">~95-100 ns baseline</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(700, 120)">
+    <rect x="0" y="0" width="160" height="70" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <rect x="15" y="15" width="20" height="14" fill="url(#parseGrad)" rx="2"/>
+    <text x="45" y="26" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">Parse (cold)</text>
+    <rect x="15" y="40" width="20" height="14" fill="url(#cacheGrad)" rx="2"/>
+    <text x="45" y="51" font-family="Arial, sans-serif" font-size="11" fill="#2c3e50">Cache hit</text>
+  </g>
+
+  <!-- Key insight box -->
+  <g transform="translate(50, 390)">
+    <rect x="0" y="0" width="800" height="50" fill="#fff" stroke="#bdc3c7" rx="5"/>
+    <text x="15" y="20" font-family="Arial, sans-serif" font-size="11" font-weight="bold" fill="#2c3e50">Key Finding:</text>
+    <text x="100" y="20" font-family="Arial, sans-serif" font-size="11" fill="#34495e">
+      Cache lookup is nearly constant (~95-100 ns) regardless of path complexity. Speedup scales with path length: 3-12x.
+    </text>
+    <text x="15" y="38" font-family="Arial, sans-serif" font-size="10" fill="#7f8c8d">
+      For CRDT workloads with stable schemas (&gt;99% cache hit rate), caching dominates SIMD parsing as the primary optimization.
+    </text>
+  </g>
+</svg>
