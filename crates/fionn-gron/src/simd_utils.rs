@@ -24,6 +24,7 @@ use std::arch::x86::*;
 #[cfg(target_arch = "aarch64")]
 use std::arch::aarch64::*;
 
+#[cfg(any(target_arch = "x86_64", target_arch = "x86"))]
 use std::sync::OnceLock;
 
 /// Cached SIMD feature detection to avoid per-call CPUID overhead.
@@ -124,6 +125,7 @@ pub fn needs_quoting(bytes: &[u8]) -> bool {
         return unsafe { needs_quoting_neon(bytes) };
     }
 
+    #[cfg(not(target_arch = "aarch64"))]
     needs_quoting_scalar(bytes)
 }
 
@@ -351,6 +353,7 @@ pub fn needs_escape(bytes: &[u8]) -> bool {
         return unsafe { needs_escape_neon(bytes) };
     }
 
+    #[cfg(not(target_arch = "aarch64"))]
     needs_escape_scalar(bytes)
 }
 

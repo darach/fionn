@@ -11,8 +11,9 @@ use std::arch::x86_64::{
 };
 
 #[cfg(target_arch = "aarch64")]
-use std::arch::aarch64::{uint8x16_t, vceqq_u8, vld1q_u8, vminvq_u8};
+use std::arch::aarch64::{vceqq_u8, vld1q_u8, vminvq_u8};
 
+#[cfg(target_arch = "x86_64")]
 use std::sync::OnceLock;
 
 /// Cached SIMD feature detection.
