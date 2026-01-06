@@ -23,10 +23,13 @@
 # Claude Code working directory
 .claude/
 
-# AFL fuzzing artifacts
+# Fuzzing artifacts (AFL and libFuzzer)
 /AFL/
 /fuzz/output/
-/fuzz/fuzz_targets/
+/fuzz/target/
+/fuzz/artifacts/
+/fuzz/corpus/fuzz_*_libfuzzer/
+/fuzz/Cargo.lock
 afl_out/
 crashes/
 hangs/

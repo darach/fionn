@@ -542,7 +542,10 @@ fn parse_usize(bytes: &[u8]) -> usize {
     let mut result = 0usize;
     for &byte in bytes {
         if byte.is_ascii_digit() {
-            result = result * 10 + (byte - b'0') as usize;
+            // Use saturating arithmetic to prevent overflow on huge digit strings
+            result = result
+                .saturating_mul(10)
+                .saturating_add((byte - b'0') as usize);
         }
     }
     result
@@ -1953,5 +1956,38 @@ mod tests {
     fn test_parse_simd_ref_only_bracket() {
         let components = parse_simd_ref("[0]");
         assert_eq!(components.len(), 1);
+    }
+
+    // Regression test for libFuzzer crash: stack overflow on huge array index
+    // Found by: cargo +nightly fuzz run fuzz_tape_libfuzzer
+    // Input: [2777777777777777777777777777777777\t\0\0\0\0\0\0\0]
+    #[test]
+    fn test_parse_usize_overflow_regression() {
+        // This input caused stack overflow before saturating arithmetic fix
+        let input = "[2777777777777777777777777777777777\t\0\0\0\0\0\0\0]";
+        let components = parse_simd(input);
+        // Should parse without crashing; index saturates to usize::MAX
+        assert_eq!(components.len(), 1);
+        match &components[0] {
+            PathComponent::ArrayIndex(idx) => {
+                // Saturated value - exact value doesn't matter, just shouldn't crash
+                assert!(*idx > 0);
+            }
+            PathComponent::Field(_) => panic!("expected ArrayIndex"),
+        }
+    }
+
+    #[test]
+    fn test_parse_usize_large_number() {
+        // Test that large numbers saturate instead of overflowing
+        let input = "data[99999999999999999999999999999999]";
+        let components = parse_simd(input);
+        assert_eq!(components.len(), 2);
+        match &components[1] {
+            PathComponent::ArrayIndex(idx) => {
+                assert_eq!(*idx, usize::MAX);
+            }
+            PathComponent::Field(_) => panic!("expected ArrayIndex"),
+        }
     }
 }
