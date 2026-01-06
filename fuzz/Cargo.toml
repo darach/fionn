@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# libFuzzer targets for OSS-Fuzz integration
+# Run with: cargo +nightly fuzz run <target>
+
+[package]
+name = "fionn-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.fionn-core]
+path = "../crates/fionn-core"
+
+[dependencies.fionn-tape]
+path = "../crates/fionn-tape"
+
+[dependencies.fionn-diff]
+path = "../crates/fionn-diff"
+
+[dependencies.fionn-gron]
+path = "../crates/fionn-gron"
+
+[dependencies.serde_json]
+version = "1.0"
+
+# Prevent this from interfering with workspaces
+[workspace]
+
+[[bin]]
+name = "fuzz_tape_libfuzzer"
+path = "fuzz_targets/fuzz_tape_libfuzzer.rs"
+test = false
+doc = false
+bench = false

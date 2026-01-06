@@ -98,11 +98,22 @@ run-gpu:
     cargo run --bin gpu-jsonl --release
 
 # =============================================================================
-# Fuzz Testing (requires cargo-afl: cargo install cargo-afl)
+# Fuzz Testing
+# =============================================================================
+# Two fuzzing backends supported:
+#   - AFL (cargo-afl): Local fuzzing with AFL instrumentation
+#   - libFuzzer (cargo-fuzz): OSS-Fuzz compatible, requires nightly
+#
+# AFL targets:     fuzz/targets/fuzz_*.rs      (6 targets)
+# libFuzzer targets: fuzz/fuzz_targets/*.rs    (OSS-Fuzz compatible)
 # =============================================================================
 
-# Build all fuzz targets
-fuzz-build:
+# -----------------------------------------------------------------------------
+# AFL Fuzzing (requires: cargo install cargo-afl)
+# -----------------------------------------------------------------------------
+
+# Build all AFL fuzz targets
+afl-build:
     cargo afl build --release --features afl-fuzz --bin fuzz_tape
     cargo afl build --release --features afl-fuzz --bin fuzz_path
     cargo afl build --release --features afl-fuzz --bin fuzz_jsonl
@@ -110,8 +121,8 @@ fuzz-build:
     cargo afl build --release --features afl-fuzz --bin fuzz_diff
     cargo afl build --release --features afl-fuzz --bin fuzz_classify
 
-# Run fuzz target (usage: just fuzz tape)
-fuzz target:
+# Run AFL fuzz target (usage: just afl-fuzz tape)
+afl-fuzz target:
     #!/usr/bin/env bash
     set -e
     export AFL_SKIP_CPUFREQ=1
@@ -120,8 +131,8 @@ fuzz target:
     cargo afl build --release --features afl-fuzz --bin fuzz_{{target}}
     cargo afl fuzz -i fuzz/corpus/{{target}} -o fuzz/output/{{target}} target/release/fuzz_{{target}}
 
-# Run fuzz target for specified duration (usage: just fuzz-timed tape 5m)
-fuzz-timed target duration:
+# Run AFL fuzz target for specified duration (usage: just afl-timed tape 5m)
+afl-timed target duration:
     #!/usr/bin/env bash
     set -e
     export AFL_SKIP_CPUFREQ=1
@@ -130,26 +141,81 @@ fuzz-timed target duration:
     cargo afl build --release --features afl-fuzz --bin fuzz_{{target}}
     cargo afl fuzz -i fuzz/corpus/{{target}} -o fuzz/output/{{target}} -V {{duration}} target/release/fuzz_{{target}}
 
-# Quick fuzz all targets (1 minute each)
-fuzz-quick:
+# Quick AFL fuzz all targets (1 minute each)
+afl-quick:
     #!/usr/bin/env bash
     set -e
     export AFL_SKIP_CPUFREQ=1
     export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
     for target in tape path jsonl gron diff classify; do
-        echo "=== Fuzzing $target for 1 minute ==="
+        echo "=== AFL fuzzing $target for 1 minute ==="
         mkdir -p fuzz/output/$target
         cargo afl build --release --features afl-fuzz --bin fuzz_$target
         timeout 60 cargo afl fuzz -i fuzz/corpus/$target -o fuzz/output/$target target/release/fuzz_$target || true
     done
-    echo "=== Fuzz quick complete ==="
+    echo "=== AFL fuzz quick complete ==="
 
-# Check for crashes in fuzz output
+# -----------------------------------------------------------------------------
+# libFuzzer / OSS-Fuzz (requires: rustup install nightly && cargo install cargo-fuzz)
+# -----------------------------------------------------------------------------
+
+# List available libFuzzer targets
+libfuzzer-list:
+    cargo +nightly fuzz list
+
+# Build all libFuzzer targets
+libfuzzer-build:
+    cargo +nightly fuzz build
+
+# Run libFuzzer target (usage: just libfuzzer-run fuzz_tape_libfuzzer)
+libfuzzer-run target:
+    cargo +nightly fuzz run {{target}}
+
+# Run libFuzzer target for duration (usage: just libfuzzer-timed fuzz_tape_libfuzzer 60)
+libfuzzer-timed target seconds:
+    cargo +nightly fuzz run {{target}} -- -max_total_time={{seconds}}
+
+# Quick libFuzzer run (30 seconds)
+libfuzzer-quick target:
+    cargo +nightly fuzz run {{target}} -- -max_total_time=30
+
+# Minimize a crash artifact (usage: just libfuzzer-tmin fuzz_tape_libfuzzer artifacts/...)
+libfuzzer-tmin target artifact:
+    cargo +nightly fuzz tmin {{target}} {{artifact}}
+
+# Show libFuzzer coverage
+libfuzzer-coverage target:
+    cargo +nightly fuzz coverage {{target}}
+
+# -----------------------------------------------------------------------------
+# Unified Fuzz Commands
+# -----------------------------------------------------------------------------
+
+# Check for crashes in all fuzz output directories
 fuzz-crashes:
     #!/usr/bin/env bash
-    echo "=== Checking for fuzz crashes ==="
+    echo "=== Checking for AFL crashes ==="
     find fuzz/output -name "crashes" -type d -exec sh -c 'echo "--- {} ---"; ls -la "{}" 2>/dev/null | grep -v "^total\|^d\|README" || echo "(empty)"' \;
+    echo ""
+    echo "=== Checking for libFuzzer crashes ==="
+    if [ -d "fuzz/artifacts" ]; then
+        find fuzz/artifacts -name "crash-*" -o -name "oom-*" -o -name "timeout-*" 2>/dev/null | head -20 || echo "(none)"
+    else
+        echo "(no artifacts directory)"
+    fi
 
-# Clean fuzz output
+# Clean all fuzz output
 fuzz-clean:
     rm -rf fuzz/output/*
+    rm -rf fuzz/artifacts/*
+    rm -rf fuzz/corpus/fuzz_*_libfuzzer
+
+# Clean only libFuzzer build artifacts (reclaim disk space)
+fuzz-clean-build:
+    rm -rf fuzz/target
+
+# Aliases for backwards compatibility
+fuzz-build: afl-build
+fuzz target: (afl-fuzz target)
+fuzz-timed target duration: (afl-timed target duration)
+fuzz-quick: afl-quick

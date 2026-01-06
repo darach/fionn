@@ -16,9 +16,9 @@ on:
         required: false
         default: 'all'
 
+# Restrict to minimal permissions (OpenSSF requirement)
 permissions:
   contents: read
-  security-events: write
 
 env:
   CARGO_TERM_COLOR: always

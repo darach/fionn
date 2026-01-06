@@ -12,8 +12,8 @@ on:
   push:
     branches: [main, master]
 
-# Minimum permissions required by Scorecard
-permissions: read-all
+# Restrict default permissions (OpenSSF requirement)
+permissions: {}
 
 jobs:
   analysis:
