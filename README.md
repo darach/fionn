@@ -135,19 +135,19 @@ fionn-stream = "0.1"  # For JSONL streaming
 
 ```bash
 # Make JSON greppable
-fionn data.json
+simd-gron data.json
 
 # Ungron - convert back to JSON
-fionn -u gronned.txt
+simd-gron -u gronned.txt
 
 # Query with JSONPath-like syntax
-fionn -q '.users[*].name' data.json
+simd-gron -q '.users[*].name' data.json
 
 # Process JSONL (newline-delimited JSON)
-fionn --jsonl large_dataset.jsonl
+simd-gron --jsonl large_dataset.jsonl
 
 # Colorized output
-fionn --color data.json
+simd-gron --color data.json
 ```
 
 ### Library Usage
