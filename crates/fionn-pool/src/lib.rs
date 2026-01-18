@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn test_parsed_tape_with_numbers() {
         let pool = ThreadLocalPool::new(PoolStrategy::Unbounded);
-        let mut json = br#"{"int": 42, "float": 3.14, "neg": -100, "exp": 1e10}"#.to_vec();
+        let mut json = br#"{"int": 42, "float": 1.23, "neg": -100, "exp": 1e10}"#.to_vec();
 
         let parsed = pool.parse(&mut json).unwrap();
         let nodes = parsed.nodes();

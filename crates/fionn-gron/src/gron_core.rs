@@ -26,6 +26,8 @@ pub struct GronOptions {
     pub values_only: bool,
     /// Include type annotations in output
     pub show_types: bool,
+    /// Colorized output for terminal
+    pub color: bool,
 }
 
 impl Default for GronOptions {
@@ -37,6 +39,7 @@ impl Default for GronOptions {
             paths_only: false,
             values_only: false,
             show_types: false,
+            color: false,
         }
     }
 }
@@ -69,6 +72,13 @@ impl GronOptions {
     #[must_use]
     pub const fn values_only(mut self) -> Self {
         self.values_only = true;
+        self
+    }
+
+    /// Set color mode for terminal output.
+    #[must_use]
+    pub const fn color(mut self) -> Self {
+        self.color = true;
         self
     }
 }
@@ -126,6 +136,16 @@ pub fn gron_to_writer<W: Write>(
     Ok(output_buf.bytes_written())
 }
 
+// ANSI color codes
+const COLOR_PATH: &[u8] = b"\x1b[36m"; // Cyan for paths
+const COLOR_EQUALS: &[u8] = b"\x1b[90m"; // Gray for = and ;
+const COLOR_STRING: &[u8] = b"\x1b[32m"; // Green for strings
+const COLOR_NUMBER: &[u8] = b"\x1b[33m"; // Yellow for numbers
+const COLOR_BOOL: &[u8] = b"\x1b[35m"; // Magenta for booleans
+const COLOR_NULL: &[u8] = b"\x1b[31m"; // Red for null
+const COLOR_BRACKET: &[u8] = b"\x1b[90m"; // Gray for {} []
+const COLOR_RESET: &[u8] = b"\x1b[0m"; // Reset
+
 /// Buffered writer for gron output.
 struct GronWriter<'a, W: Write> {
     writer: &'a mut W,
@@ -146,16 +166,50 @@ impl<'a, W: Write> GronWriter<'a, W> {
 
     fn write_line(&mut self, path: &str, value: &[u8]) -> Result<()> {
         if self.options.values_only {
-            self.buffer.extend_from_slice(value);
+            if self.options.color {
+                self.write_colored_value(value);
+            } else {
+                self.buffer.extend_from_slice(value);
+            }
             self.buffer.push(b'\n');
         } else if self.options.paths_only {
-            self.buffer.extend_from_slice(path.as_bytes());
+            if self.options.color {
+                self.buffer.extend_from_slice(COLOR_PATH);
+                self.buffer.extend_from_slice(path.as_bytes());
+                self.buffer.extend_from_slice(COLOR_RESET);
+            } else {
+                self.buffer.extend_from_slice(path.as_bytes());
+            }
             self.buffer.push(b'\n');
         } else if self.options.compact {
+            if self.options.color {
+                self.buffer.extend_from_slice(COLOR_PATH);
+                self.buffer.extend_from_slice(path.as_bytes());
+                self.buffer.extend_from_slice(COLOR_EQUALS);
+                self.buffer.push(b'=');
+                self.buffer.extend_from_slice(COLOR_RESET);
+                self.write_colored_value(value);
+                self.buffer.extend_from_slice(COLOR_EQUALS);
+                self.buffer.push(b';');
+                self.buffer.extend_from_slice(COLOR_RESET);
+            } else {
+                self.buffer.extend_from_slice(path.as_bytes());
+                self.buffer.push(b'=');
+                self.buffer.extend_from_slice(value);
+                self.buffer.push(b';');
+            }
+            self.buffer.push(b'\n');
+        } else if self.options.color {
+            self.buffer.extend_from_slice(COLOR_PATH);
             self.buffer.extend_from_slice(path.as_bytes());
-            self.buffer.push(b'=');
-            self.buffer.extend_from_slice(value);
+            self.buffer.extend_from_slice(COLOR_RESET);
+            self.buffer.extend_from_slice(COLOR_EQUALS);
+            self.buffer.extend_from_slice(b" = ");
+            self.buffer.extend_from_slice(COLOR_RESET);
+            self.write_colored_value(value);
+            self.buffer.extend_from_slice(COLOR_EQUALS);
             self.buffer.push(b';');
+            self.buffer.extend_from_slice(COLOR_RESET);
             self.buffer.push(b'\n');
         } else {
             self.buffer.extend_from_slice(path.as_bytes());
@@ -170,6 +224,26 @@ impl<'a, W: Write> GronWriter<'a, W> {
         }
 
         Ok(())
+    }
+
+    fn write_colored_value(&mut self, value: &[u8]) {
+        // Determine value type and apply appropriate color
+        if value.is_empty() {
+            return;
+        }
+
+        let color = match value[0] {
+            b'"' => COLOR_STRING,
+            b't' | b'f' => COLOR_BOOL, // true/false
+            b'n' => COLOR_NULL,        // null
+            b'{' | b'}' | b'[' | b']' => COLOR_BRACKET,
+            b'0'..=b'9' | b'-' => COLOR_NUMBER,
+            _ => COLOR_RESET,
+        };
+
+        self.buffer.extend_from_slice(color);
+        self.buffer.extend_from_slice(value);
+        self.buffer.extend_from_slice(COLOR_RESET);
     }
 
     fn flush(&mut self) -> Result<()> {
@@ -421,7 +495,7 @@ mod tests {
 
     #[test]
     fn test_float_values() {
-        let json = r#"{"pi": 3.14159, "e": 2.71828}"#;
+        let json = r#"{"pi": 1.5, "e": 2.71828}"#;
         let output = gron(json, &GronOptions::default()).unwrap();
         assert!(output.contains("json.pi = "));
         assert!(output.contains("json.e = "));

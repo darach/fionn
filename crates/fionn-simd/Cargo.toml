@@ -16,9 +16,30 @@ categories = ["parsing", "encoding"]
 memchr = "2.7"
 rayon = "1.10"
 bumpalo = "3.16"
+fionn-core = { path = "../fionn-core", version = "0.1.0" }
+serde_json = "1.0"
+toml = { version = "0.8", optional = true }
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.5"
+fionn-tape = { path = "../fionn-tape" }
+fionn-gron = { path = "../fionn-gron" }
+
+[features]
+default = []
+## YAML format SIMD parser
+yaml = ["fionn-core/yaml"]
+## TOML format SIMD parser
+toml = ["fionn-core/toml", "dep:toml"]
+## CSV format SIMD parser
+csv = ["fionn-core/csv"]
+## ISON format SIMD parser (LLM-optimized)
+ison = ["fionn-core/ison"]
+## TOON format SIMD parser (LLM-optimized)
+toon = ["fionn-core/toon"]
+## All format parsers
+all-formats = ["yaml", "toml", "csv", "ison", "toon"]
 
 [lints]
 workspace = true

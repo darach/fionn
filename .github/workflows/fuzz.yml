@@ -12,7 +12,7 @@ on:
         required: false
         default: '10m'
       target:
-        description: 'Fuzz target (tape, path, jsonl, classify, diff, gron, all)'
+        description: 'Fuzz target (tape, path, jsonl, classify, diff, gron, formats, all)'
         required: false
         default: 'all'
 
@@ -30,7 +30,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [tape, path, jsonl, classify]
+        target: [tape, path, jsonl, classify, formats]
+        include:
+          - target: formats
+            extra_features: "--features all-formats"
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -53,7 +56,7 @@ jobs:
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
 
       - name: Build fuzz target
-        run: cargo afl build --release --features afl-fuzz --bin fuzz_${{ matrix.target }}
+        run: cargo afl build --release --features afl-fuzz ${{ matrix.extra_features || '' }} --bin fuzz_${{ matrix.target }}
 
       - name: Run fuzzer
         run: |

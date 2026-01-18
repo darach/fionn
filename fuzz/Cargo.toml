@@ -16,6 +16,7 @@ libfuzzer-sys = "0.4"
 
 [dependencies.fionn-core]
 path = "../crates/fionn-core"
+features = ["yaml", "toml", "csv", "ison", "toon"]
 
 [dependencies.fionn-tape]
 path = "../crates/fionn-tape"
@@ -26,8 +27,20 @@ path = "../crates/fionn-diff"
 [dependencies.fionn-gron]
 path = "../crates/fionn-gron"
 
+[dependencies.fionn-simd]
+path = "../crates/fionn-simd"
+features = ["all-formats"]
+
 [dependencies.serde_json]
 version = "1.0"
+
+[features]
+default = ["yaml", "toml", "csv", "ison", "toon"]
+yaml = []
+toml = []
+csv = []
+ison = []
+toon = []
 
 # Prevent this from interfering with workspaces
 [workspace]
@@ -35,6 +48,48 @@ version = "1.0"
 [[bin]]
 name = "fuzz_tape_libfuzzer"
 path = "fuzz_targets/fuzz_tape_libfuzzer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_formats_libfuzzer"
+path = "fuzz_targets/fuzz_formats_libfuzzer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tape_source"
+path = "fuzz_targets/fuzz_tape_source.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_value_builders"
+path = "fuzz_targets/fuzz_value_builders.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_diff_tapes"
+path = "fuzz_targets/fuzz_diff_tapes.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_merge_tapes"
+path = "fuzz_targets/fuzz_merge_tapes.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_ungron"
+path = "fuzz_targets/fuzz_ungron.rs"
 test = false
 doc = false
 bench = false

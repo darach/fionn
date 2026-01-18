@@ -104,6 +104,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if args.values_only {
         gron_opts = gron_opts.values_only();
     }
+    if args.color {
+        gron_opts = gron_opts.color();
+    }
 
     // Handle query mode
     if let Some(query_str) = &args.query {

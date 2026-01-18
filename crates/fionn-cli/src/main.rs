@@ -1,38 +1,149 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! fionn CLI binary - A Swiss Army knife for JSON with SIMD acceleration
+//! fionn CLI binary - A Swiss Army knife for structured data with SIMD acceleration
+//!
+//! Supports multiple formats: JSON, YAML, TOML, CSV, ISON, TOON
+//!
+//! This CLI uses the tape-based architecture throughout for maximum performance:
+//! - `UnifiedTape::parse()` for parsing all formats
+//! - `transform()` for cross-format conversion
+//! - `gron_from_tape()` for format-agnostic gron
+//! - `diff_tapes()` for tape-native diffing (250x faster than DOM)
+//! - `merge_tapes()` for tape-based merging
 
-use clap::{Parser, Subcommand};
-use fionn_diff::{apply_patch, json_diff, json_merge_patch};
-use fionn_gron::{GronOptions, GronQueryOptions, Query, gron, gron_query, ungron_to_value};
+#![allow(clippy::single_match_else)]
+#![allow(clippy::unnecessary_wraps)]
+#![allow(clippy::option_if_let_else)]
+#![allow(clippy::redundant_clone)]
+#![allow(clippy::map_unwrap_or)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::unnecessary_sort_by)]
+#![allow(clippy::manual_pattern_char_comparison)]
+
+use clap::{Parser, Subcommand, ValueEnum};
+use fionn_core::FormatKind;
+use fionn_diff::{
+    apply_patch, deep_merge_tapes, diff_tapes, json_diff, json_merge_patch, merge_tapes,
+    tape_to_value,
+};
+use fionn_gron::{
+    GronOptions, GronQueryOptions, Query, gron, gron_from_tape, gron_query, ungron_to_value,
+};
+use fionn_tape::DsonTape;
 use serde::Serialize;
+use serde_json::Value;
 use std::fs;
 use std::io::{self, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+// Tape-based transform is available when any format feature is enabled
+#[cfg(any(
+    feature = "yaml",
+    feature = "toml",
+    feature = "csv",
+    feature = "ison",
+    feature = "toon"
+))]
+use fionn_simd::transform::{TransformOptions, transform};
+
+// ============================================================================
+// CLI Format Enum (mirrors FormatKind but for clap)
+// ============================================================================
+
+/// Supported data formats
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, ValueEnum)]
+pub enum Format {
+    /// JSON (JavaScript Object Notation)
+    Json,
+    /// YAML (YAML Ain't Markup Language)
+    #[cfg(feature = "yaml")]
+    Yaml,
+    /// TOML (Tom's Obvious Minimal Language)
+    #[cfg(feature = "toml")]
+    Toml,
+    /// CSV (Comma-Separated Values)
+    #[cfg(feature = "csv")]
+    Csv,
+    /// ISON (Interchange Simple Object Notation)
+    #[cfg(feature = "ison")]
+    Ison,
+    /// TOON (Token-Oriented Object Notation)
+    #[cfg(feature = "toon")]
+    Toon,
+    /// Gron (greppable object notation) - output only
+    Gron,
+    /// Auto-detect format from content/extension
+    #[default]
+    Auto,
+}
+
+#[allow(dead_code)]
+impl Format {
+    /// Convert to [`FormatKind`] (for library interop)
+    const fn to_format_kind(self) -> Option<FormatKind> {
+        match self {
+            Self::Json => Some(FormatKind::Json),
+            #[cfg(feature = "yaml")]
+            Self::Yaml => Some(FormatKind::Yaml),
+            #[cfg(feature = "toml")]
+            Self::Toml => Some(FormatKind::Toml),
+            #[cfg(feature = "csv")]
+            Self::Csv => Some(FormatKind::Csv),
+            #[cfg(feature = "ison")]
+            Self::Ison => Some(FormatKind::Ison),
+            #[cfg(feature = "toon")]
+            Self::Toon => Some(FormatKind::Toon),
+            Self::Gron | Self::Auto => None,
+        }
+    }
+
+    /// Check if this is an output-only format
+    const fn is_output_only(self) -> bool {
+        matches!(self, Self::Gron)
+    }
+}
+
+// ============================================================================
+// Main CLI Structure
+// ============================================================================
 
 #[derive(Parser)]
 #[command(name = "fionn")]
-#[command(version, about, long_about = None)]
+#[command(
+    version,
+    about = "A Swiss Army knife for structured data with SIMD acceleration"
+)]
+#[command(long_about = "fionn - Multi-format data processing tool\n\n\
+    Supports: JSON, YAML, TOML, CSV, ISON, TOON\n\
+    Operations: gron, diff, patch, merge, query, format, validate, convert")]
 #[allow(clippy::struct_excessive_bools)]
 struct Args {
-    /// Enable SIMD acceleration (default: true)
-    #[arg(long, default_value = "true")]
-    simd: bool,
+    /// Input format (default: auto-detect)
+    #[arg(short = 'f', long = "from", global = true, value_name = "FORMAT")]
+    from: Option<Format>,
 
-    /// Enable GPU acceleration (default: true if available)
-    #[arg(long, default_value = "true")]
-    gpu: bool,
+    /// Output format (default: same as input, or json)
+    #[arg(short = 't', long = "to", global = true, value_name = "FORMAT")]
+    to: Option<Format>,
+
+    /// Pretty-print output
+    #[arg(short = 'p', long = "pretty", global = true)]
+    pretty: bool,
+
+    /// Compact output (no extra whitespace)
+    #[arg(long = "compact", global = true)]
+    compact: bool,
 
     /// Colorized output
-    #[arg(long)]
+    #[arg(long = "color", global = true)]
     color: bool,
 
-    /// Stream processing for large files
-    #[arg(long)]
-    stream: bool,
-
     /// Output file (default: stdout)
-    #[arg(short, long)]
+    #[arg(short = 'o', long = "output", global = true)]
     output: Option<PathBuf>,
+
+    /// Quiet mode - suppress informational messages
+    #[arg(short = 'q', long = "quiet", global = true)]
+    quiet: bool,
 
     #[command(subcommand)]
     command: Commands,
@@ -41,453 +152,453 @@ struct Args {
 /// Subcommands for fionn CLI
 #[derive(Subcommand)]
 enum Commands {
-    /// Flatten JSON to gron format
+    /// Flatten data to gron format (greppable)
     Gron {
         /// Input file (reads from stdin if not provided)
         #[arg(value_name = "FILE")]
         input: Option<PathBuf>,
 
-        /// Reverse mode: convert gron back to JSON
+        /// Reverse mode: convert gron back to structured format
         #[arg(short = 'u', long = "ungron")]
         ungron: bool,
 
-        /// Output compact gron format
+        /// Output compact gron format (no spaces)
         #[arg(short = 'c', long = "compact")]
         compact: bool,
 
-        /// Output only paths
+        /// Output only paths (no values)
         #[arg(long = "paths")]
         paths_only: bool,
 
-        /// Output only values
+        /// Output only values (no paths)
         #[arg(long = "values")]
         values_only: bool,
 
-        /// Custom root prefix
-        #[arg(short = 'p', long = "prefix", default_value = "json")]
+        /// Custom root prefix (default: json)
+        #[arg(long = "prefix", default_value = "json")]
         prefix: String,
 
-        /// Query filter
-        #[arg(short = 'q', long = "query")]
+        /// Query filter (JSONPath-like)
+        #[arg(long = "query")]
         query: Option<String>,
 
-        /// Maximum query matches
-        #[arg(long = "max-matches", default_value = "0")]
-        max_matches: usize,
+        /// Sort output alphabetically
+        #[arg(long = "sort")]
+        sort: bool,
+    },
 
-        /// Include container declarations in query output
-        #[arg(long = "include-containers")]
-        include_containers: bool,
-    },
-    /// Compute diff between two JSON files
+    /// Compute diff between two files
     Diff {
-        /// First JSON file
+        /// First file (source)
         file1: PathBuf,
-        /// Second JSON file
+        /// Second file (target)
         file2: PathBuf,
+
+        /// Output format for diff (json-patch, merge-patch, or unified)
+        #[arg(long = "diff-format", default_value = "json-patch")]
+        diff_format: String,
+
+        /// Ignore array element order
+        #[arg(long = "ignore-order")]
+        ignore_order: bool,
     },
-    /// Apply JSON Patch to a JSON file
+
+    /// Apply a patch to a file
     Patch {
-        /// JSON file to patch
+        /// File to patch
         file: PathBuf,
-        /// Patch file (JSON Patch format)
+        /// Patch file (JSON Patch or Merge Patch format)
         patch: PathBuf,
+
+        /// Patch format (json-patch or merge-patch)
+        #[arg(long = "patch-format", default_value = "json-patch")]
+        patch_format: String,
+
+        /// Dry run - show result without modifying
+        #[arg(long = "dry-run")]
+        dry_run: bool,
     },
-    /// Merge JSON files
+
+    /// Merge multiple files
     Merge {
-        /// JSON files to merge
+        /// Files to merge (first file is base)
         files: Vec<PathBuf>,
+
+        /// Deep merge nested objects (default: true)
+        #[arg(long = "deep", default_value = "true")]
+        deep: bool,
+
+        /// Array merge strategy (replace, append, concat)
+        #[arg(long = "arrays", default_value = "replace")]
+        array_strategy: String,
     },
-    /// Query JSON with JSONPath-like syntax
+
+    /// Query data with JSONPath-like syntax
     Query {
-        /// Query string
+        /// Query string (JSONPath-like)
         query: String,
-        /// JSON file
+        /// Input file
         file: Option<PathBuf>,
+
+        /// Output raw values (no JSON encoding for strings)
+        #[arg(short = 'r', long = "raw")]
+        raw: bool,
+
+        /// Return only first match
+        #[arg(long = "first")]
+        first: bool,
     },
-    /// Format JSON (pretty-print or compact)
-    Format {
-        /// JSON file
+
+    /// Convert between formats
+    Convert {
+        /// Input file
         file: Option<PathBuf>,
-        /// Compact output
-        #[arg(short = 'c', long = "compact")]
-        compact: bool,
-        /// Indentation level
+
+        /// Sort object keys alphabetically
+        #[arg(long = "sort-keys")]
+        sort_keys: bool,
+    },
+
+    /// Format/pretty-print data
+    Format {
+        /// Input file
+        file: Option<PathBuf>,
+
+        /// Indentation width (spaces)
         #[arg(short = 'i', long = "indent", default_value = "2")]
         indent: usize,
+
+        /// Sort object keys
+        #[arg(long = "sort-keys")]
+        sort_keys: bool,
     },
-    /// Validate JSON
+
+    /// Validate data format
     Validate {
-        /// JSON file
+        /// Input file
         file: Option<PathBuf>,
+
+        /// Strict validation mode
+        #[arg(long = "strict")]
+        strict: bool,
     },
-    /// Process JSONL streams
+
+    /// Process streaming data (JSONL, multi-doc YAML, CSV rows)
     Stream {
-        /// JSONL file
+        /// Input file
         file: Option<PathBuf>,
+
+        /// Filter records by query
+        #[arg(long = "filter")]
+        filter: Option<String>,
+
+        /// Limit number of records
+        #[arg(long = "limit")]
+        limit: Option<usize>,
+
+        /// Skip first N records
+        #[arg(long = "skip")]
+        skip: Option<usize>,
     },
-    /// Extract JSON schema
+
+    /// Infer schema from data
     Schema {
-        /// JSON file
+        /// Input file
         file: Option<PathBuf>,
+
+        /// Schema output format (json-schema, typescript, rust)
+        #[arg(long = "schema-format", default_value = "json-schema")]
+        schema_format: String,
     },
-    /// Perform operations on JSON
+
+    /// Perform operations on data
     Ops {
-        /// Operation type
+        /// Operation: keys, values, length, flatten, type, paths, etc.
         op: String,
-        /// JSON file
+        /// Input file
+        file: Option<PathBuf>,
+
+        /// Path to operate on (for nested operations)
+        #[arg(long = "path")]
+        path: Option<String>,
+    },
+
+    /// Show statistics about data
+    Stats {
+        /// Input file
         file: Option<PathBuf>,
     },
-    /// Benchmark JSON processing
-    Bench,
+
+    /// Run benchmarks
+    Bench {
+        /// Benchmark type (parse, gron, diff, all)
+        #[arg(default_value = "all")]
+        bench_type: String,
+    },
 }
 
-fn main() {
-    let args = Args::parse();
+// ============================================================================
+// Format Detection and Parsing
+// ============================================================================
 
-    match args.command {
-        Commands::Gron { .. } => handle_gron(&args),
-        Commands::Diff { .. } => handle_diff(&args),
-        Commands::Patch { .. } => handle_patch(&args),
-        Commands::Merge { .. } => handle_merge(&args),
-        Commands::Query { .. } => handle_query(&args),
-        Commands::Format { .. } => handle_format(&args),
-        Commands::Validate { .. } => handle_validate(&args),
-        Commands::Stream { .. } => handle_stream(&args),
-        Commands::Schema { .. } => handle_schema(&args),
-        Commands::Ops { .. } => handle_ops(&args),
-        Commands::Bench => handle_bench(&args),
+/// Detect format from file extension
+fn detect_format_from_extension(path: &Path) -> Option<Format> {
+    let ext = path.extension()?.to_str()?.to_lowercase();
+    match ext.as_str() {
+        "json" | "jsonl" | "geojson" | "ndjson" => Some(Format::Json),
+        #[cfg(feature = "yaml")]
+        "yaml" | "yml" => Some(Format::Yaml),
+        #[cfg(feature = "toml")]
+        "toml" => Some(Format::Toml),
+        #[cfg(feature = "csv")]
+        "csv" | "tsv" => Some(Format::Csv),
+        #[cfg(feature = "ison")]
+        "ison" => Some(Format::Ison),
+        #[cfg(feature = "toon")]
+        "toon" => Some(Format::Toon),
+        "gron" => Some(Format::Gron),
+        _ => None,
     }
 }
 
-fn handle_gron(args: &Args) {
-    if let Commands::Gron {
-        input,
-        ungron,
-        compact,
-        paths_only,
-        values_only,
-        prefix,
-        query,
-        max_matches,
-        include_containers,
-    } = &args.command
-        && let Err(e) = run_gron(
-            input.as_ref(),
-            *ungron,
-            *compact,
-            *paths_only,
-            *values_only,
-            prefix,
-            query.as_ref(),
-            *max_matches,
-            *include_containers,
-        )
+/// Detect format from content
+fn detect_format_from_content(content: &[u8]) -> Format {
+    let result = FormatKind::detect_from_content(content);
+    match result.format {
+        FormatKind::Json => Format::Json,
+        #[cfg(feature = "yaml")]
+        FormatKind::Yaml => Format::Yaml,
+        #[cfg(feature = "toml")]
+        FormatKind::Toml => Format::Toml,
+        #[cfg(feature = "csv")]
+        FormatKind::Csv => Format::Csv,
+        #[cfg(feature = "ison")]
+        FormatKind::Ison => Format::Ison,
+        #[cfg(feature = "toon")]
+        FormatKind::Toon => Format::Toon,
+        #[allow(unreachable_patterns)]
+        _ => Format::Json,
+    }
+}
+
+/// Resolve format (explicit > extension > content detection)
+fn resolve_input_format(explicit: Option<Format>, path: Option<&Path>, content: &[u8]) -> Format {
+    // Explicit format takes precedence
+    if let Some(fmt) = explicit
+        && fmt != Format::Auto
     {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
+        return fmt;
     }
+
+    // Try file extension
+    if let Some(p) = path
+        && let Some(fmt) = detect_format_from_extension(p)
+    {
+        return fmt;
+    }
+
+    // Fall back to content detection
+    detect_format_from_content(content)
 }
 
-#[allow(clippy::fn_params_excessive_bools)]
-#[allow(clippy::too_many_arguments)]
-fn run_gron(
-    input: Option<&PathBuf>,
-    ungron: bool,
-    compact: bool,
-    paths_only: bool,
-    values_only: bool,
-    prefix: &str,
-    query: Option<&String>,
-    max_matches: usize,
-    include_containers: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(input)?;
-
-    if ungron {
-        let value = ungron_to_value(&input_str)?;
-        let output = serde_json::to_string_pretty(&value)?;
-        write_output(&output)?;
-        return Ok(());
+/// Resolve output format
+fn resolve_output_format(explicit: Option<Format>, input_format: Format) -> Format {
+    if let Some(fmt) = explicit
+        && fmt != Format::Auto
+    {
+        return fmt;
     }
-
-    let mut gron_opts = GronOptions::with_prefix(prefix);
-    if compact {
-        gron_opts = gron_opts.compact();
-    }
-    if paths_only {
-        gron_opts = gron_opts.paths_only();
-    }
-    if values_only {
-        gron_opts = gron_opts.values_only();
-    }
-
-    if let Some(query_str) = query {
-        let query = Query::parse(query_str)?;
-        let mut query_opts = GronQueryOptions {
-            gron: gron_opts,
-            max_matches,
-            include_containers,
-        };
-        if compact {
-            query_opts = query_opts.compact();
-        }
-        let output = gron_query(&input_str, &query, &query_opts)?;
-        write_output(&output)?;
+    // Default to input format, or JSON if input was gron
+    if input_format == Format::Gron {
+        Format::Json
     } else {
-        let output = gron(&input_str, &gron_opts)?;
-        write_output(&output)?;
-    }
-
-    Ok(())
-}
-
-fn handle_diff(args: &Args) {
-    if let Commands::Diff { file1, file2 } = &args.command
-        && let Err(e) = run_diff(file1, file2)
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
+        input_format
     }
 }
 
-fn run_diff(file1: &PathBuf, file2: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    let json1 = fs::read_to_string(file1)?;
-    let json2 = fs::read_to_string(file2)?;
-    let value1: serde_json::Value = serde_json::from_str(&json1)?;
-    let value2: serde_json::Value = serde_json::from_str(&json2)?;
-    let patch = json_diff(&value1, &value2);
-    let output = serde_json::to_string_pretty(&patch)?;
-    write_output(&output)?;
-    Ok(())
-}
+// ============================================================================
+// Parsing Functions
+// ============================================================================
 
-fn handle_patch(args: &Args) {
-    if let Commands::Patch { file, patch } = &args.command
-        && let Err(e) = run_patch(file, patch)
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
+/// Parse content to [`serde_json::Value`] based on format
+fn parse_to_value(content: &str, format: Format) -> Result<Value, Box<dyn std::error::Error>> {
+    match format {
+        Format::Json | Format::Auto => Ok(serde_json::from_str(content)?),
+        #[cfg(feature = "yaml")]
+        Format::Yaml => Ok(serde_yaml::from_str(content)?),
+        #[cfg(feature = "toml")]
+        Format::Toml => {
+            let toml_value: toml_crate::Value = toml_crate::from_str(content)?;
+            // Convert TOML Value to JSON Value
+            let json_str = serde_json::to_string(&toml_value)?;
+            Ok(serde_json::from_str(&json_str)?)
+        }
+        #[cfg(feature = "csv")]
+        Format::Csv => {
+            // Parse CSV to array of objects
+            let mut reader = csv::Reader::from_reader(content.as_bytes());
+            let headers: Vec<String> = reader.headers()?.iter().map(String::from).collect();
+            let mut records = Vec::new();
+            for result in reader.records() {
+                let record = result?;
+                let mut obj = serde_json::Map::new();
+                for (i, field) in record.iter().enumerate() {
+                    if i < headers.len() {
+                        obj.insert(headers[i].clone(), Value::String(field.to_string()));
+                    }
+                }
+                records.push(Value::Object(obj));
+            }
+            Ok(Value::Array(records))
+        }
+        Format::Gron => {
+            // Parse gron format back to JSON
+            let value = ungron_to_value(content)?;
+            Ok(value)
+        }
+        #[cfg(feature = "ison")]
+        Format::Ison => {
+            // ISON parsing via transform - uses real ISON parser and JSON emitter
+            let opts = TransformOptions::new();
+            let (json_bytes, _metrics) = transform(
+                content.as_bytes(),
+                FormatKind::Ison,
+                FormatKind::Json,
+                &opts,
+            )
+            .map_err(|e| format!("ISON parse error: {e}"))?;
+            let json_str = String::from_utf8(json_bytes)
+                .map_err(|e| format!("ISON output encoding error: {e}"))?;
+            Ok(serde_json::from_str(&json_str)?)
+        }
+        #[cfg(feature = "toon")]
+        Format::Toon => {
+            // TOON parsing via transform - uses real TOON parser and JSON emitter
+            let opts = TransformOptions::new();
+            let (json_bytes, _metrics) = transform(
+                content.as_bytes(),
+                FormatKind::Toon,
+                FormatKind::Json,
+                &opts,
+            )
+            .map_err(|e| format!("TOON parse error: {e}"))?;
+            let json_str = String::from_utf8(json_bytes)
+                .map_err(|e| format!("TOON output encoding error: {e}"))?;
+            Ok(serde_json::from_str(&json_str)?)
+        }
+        #[allow(unreachable_patterns)]
+        _ => Err("Unsupported input format".into()),
     }
 }
 
-fn run_patch(file: &PathBuf, patch_file: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
-    let json = fs::read_to_string(file)?;
-    let patch_json = fs::read_to_string(patch_file)?;
-    let mut value: serde_json::Value = serde_json::from_str(&json)?;
-    let patch: fionn_diff::JsonPatch = serde_json::from_str(&patch_json)?;
-    #[allow(clippy::unnecessary_mut_passed)]
-    apply_patch(&mut value, &patch)?;
-    let output = serde_json::to_string_pretty(&value)?;
-    write_output(&output)?;
-    Ok(())
-}
+// ============================================================================
+// Output Functions
+// ============================================================================
 
-fn handle_merge(args: &Args) {
-    if let Commands::Merge { files } = &args.command
-        && let Err(e) = run_merge(files)
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_merge(files: &[PathBuf]) -> Result<(), Box<dyn std::error::Error>> {
-    if files.is_empty() {
-        return Err("No files provided for merge".into());
-    }
-    let mut result: serde_json::Value = serde_json::from_str(&fs::read_to_string(&files[0])?)?;
-    for file in &files[1..] {
-        let json = fs::read_to_string(file)?;
-        let value: serde_json::Value = serde_json::from_str(&json)?;
-        #[allow(clippy::unnecessary_mut_passed)]
-        let _ = json_merge_patch(&mut result, &value);
-    }
-    let output = serde_json::to_string_pretty(&result)?;
-    write_output(&output)?;
-    Ok(())
-}
-
-fn handle_query(args: &Args) {
-    if let Commands::Query { query, file } = &args.command
-        && let Err(e) = run_query(query, file.as_ref())
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_query(query_str: &str, file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(file)?;
-    let query = Query::parse(query_str)?;
-    let gron_opts = GronOptions::default();
-    let query_opts = GronQueryOptions {
-        gron: gron_opts,
-        max_matches: 0,
-        include_containers: false,
-    };
-    let output = gron_query(&input_str, &query, &query_opts)?;
-    write_output(&output)?;
-    Ok(())
-}
-
-fn handle_format(args: &Args) {
-    if let Commands::Format {
-        file,
-        compact,
-        indent,
-    } = &args.command
-        && let Err(e) = run_format(file.as_ref(), *compact, *indent)
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_format(
-    file: Option<&PathBuf>,
+/// Serialize value to string based on format
+fn value_to_string(
+    value: &Value,
+    format: Format,
+    pretty: bool,
     compact: bool,
     indent: usize,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(file)?;
-    let value: serde_json::Value = serde_json::from_str(&input_str)?;
-    let output = if compact {
-        serde_json::to_string(&value)?
-    } else {
-        let indent_str = " ".repeat(indent);
-        let mut buf = Vec::new();
-        let formatter = serde_json::ser::PrettyFormatter::with_indent(indent_str.as_bytes());
-        let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
-        value.serialize(&mut ser)?;
-        String::from_utf8(buf)?
-    };
-    write_output(&output)?;
-    Ok(())
-}
-
-fn handle_validate(args: &Args) {
-    if let Commands::Validate { file } = &args.command
-        && let Err(e) = run_validate(file.as_ref())
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_validate(file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(file)?;
-    let _: serde_json::Value = serde_json::from_str(&input_str)?;
-    println!("JSON is valid");
-    Ok(())
-}
-
-fn handle_stream(args: &Args) {
-    if let Commands::Stream { file } = &args.command
-        && let Err(e) = run_stream(file.as_ref())
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_stream(file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(file)?;
-    let _: serde_json::Value = serde_json::from_str(&input_str)?;
-    println!("JSON stream processed successfully");
-    Ok(())
-}
-
-fn handle_schema(args: &Args) {
-    if let Commands::Schema { file } = &args.command
-        && let Err(e) = run_schema(file.as_ref())
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_schema(file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(file)?;
-    let value: serde_json::Value = serde_json::from_str(&input_str)?;
-    let schema = infer_schema(&value);
-    let output = serde_json::to_string_pretty(&schema)?;
-    write_output(&output)?;
-    Ok(())
-}
-
-fn infer_schema(value: &serde_json::Value) -> serde_json::Value {
-    match value {
-        serde_json::Value::Null => serde_json::json!({"type": "null"}),
-        serde_json::Value::Bool(_) => serde_json::json!({"type": "boolean"}),
-        serde_json::Value::Number(_) => serde_json::json!({"type": "number"}),
-        serde_json::Value::String(_) => serde_json::json!({"type": "string"}),
-        serde_json::Value::Array(arr) => {
-            if arr.is_empty() {
-                serde_json::json!({"type": "array"})
+) -> Result<String, Box<dyn std::error::Error>> {
+    match format {
+        Format::Json | Format::Auto => {
+            if compact {
+                Ok(serde_json::to_string(value)?)
+            } else if pretty {
+                Ok(serde_json::to_string_pretty(value)?)
             } else {
-                let item_schema = infer_schema(&arr[0]);
-                serde_json::json!({"type": "array", "items": item_schema})
+                let indent_str = " ".repeat(indent);
+                let mut buf = Vec::new();
+                let formatter =
+                    serde_json::ser::PrettyFormatter::with_indent(indent_str.as_bytes());
+                let mut ser = serde_json::Serializer::with_formatter(&mut buf, formatter);
+                value.serialize(&mut ser)?;
+                Ok(String::from_utf8(buf)?)
             }
         }
-        serde_json::Value::Object(obj) => {
-            let mut properties = serde_json::Map::new();
-            for (k, v) in obj {
-                properties.insert(k.clone(), infer_schema(v));
-            }
-            serde_json::json!({"type": "object", "properties": properties})
+        #[cfg(feature = "yaml")]
+        Format::Yaml => Ok(serde_yaml::to_string(value)?),
+        #[cfg(feature = "toml")]
+        Format::Toml => {
+            // Convert to TOML - requires the value to be a table
+            let toml_str = toml_crate::to_string_pretty(value)?;
+            Ok(toml_str)
         }
-    }
-}
+        #[cfg(feature = "csv")]
+        Format::Csv => {
+            // Convert array of objects to CSV
+            if let Value::Array(arr) = value {
+                let mut wtr = csv::Writer::from_writer(vec![]);
+                // Get headers from first object
+                if let Some(Value::Object(first)) = arr.first() {
+                    let headers: Vec<&str> = first.keys().map(String::as_str).collect();
+                    wtr.write_record(&headers)?;
 
-fn handle_ops(args: &Args) {
-    if let Commands::Ops { op, file } = &args.command
-        && let Err(e) = run_ops(op, file.as_ref())
-    {
-        eprintln!("Error: {e}");
-        std::process::exit(1);
-    }
-}
-
-fn run_ops(op: &str, file: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let input_str = read_input(file)?;
-    let value: serde_json::Value = serde_json::from_str(&input_str)?;
-    let result = match op {
-        "keys" => {
-            if let serde_json::Value::Object(obj) = value {
-                serde_json::Value::Array(
-                    obj.keys()
-                        .map(|k| serde_json::Value::String(k.clone()))
-                        .collect(),
-                )
+                    for item in arr {
+                        if let Value::Object(obj) = item {
+                            let row: Vec<String> = headers
+                                .iter()
+                                .map(|h| {
+                                    obj.get(*h)
+                                        .map(|v| match v {
+                                            Value::String(s) => s.clone(),
+                                            other => other.to_string(),
+                                        })
+                                        .unwrap_or_default()
+                                })
+                                .collect();
+                            wtr.write_record(&row)?;
+                        }
+                    }
+                }
+                Ok(String::from_utf8(wtr.into_inner()?)?)
             } else {
-                return Err("keys op requires object".into());
+                Err("CSV output requires an array of objects".into())
             }
         }
-        "length" => match value {
-            serde_json::Value::Array(arr) => serde_json::json!(arr.len()),
-            serde_json::Value::Object(obj) => serde_json::json!(obj.len()),
-            serde_json::Value::String(s) => serde_json::json!(s.len()),
-            _ => return Err("length op not applicable".into()),
-        },
-        _ => return Err(format!("Unknown op: {op}").into()),
-    };
-    let output = serde_json::to_string_pretty(&result)?;
-    write_output(&output)?;
-    Ok(())
-}
-
-fn handle_bench(_args: &Args) {
-    // Basic benchmark
-    use std::time::Instant;
-    let data = r#"{"test": "data", "number": 42, "array": [1,2,3]}"#.repeat(1000);
-    let start = Instant::now();
-    for _ in 0..100 {
-        let _: serde_json::Value = serde_json::from_str(&data).unwrap();
+        Format::Gron => {
+            // Output as gron format
+            let json_str = serde_json::to_string(value)?;
+            let opts = if compact {
+                GronOptions::default().compact()
+            } else {
+                GronOptions::default()
+            };
+            Ok(gron(&json_str, &opts)?)
+        }
+        #[cfg(feature = "ison")]
+        Format::Ison => {
+            // ISON output via transform - real ISON emitter
+            let json_bytes = serde_json::to_vec(value)?;
+            let opts = TransformOptions::new().with_pretty(pretty);
+            let (output, _metrics) =
+                transform(&json_bytes, FormatKind::Json, FormatKind::Ison, &opts)
+                    .map_err(|e| format!("ISON transform error: {e}"))?;
+            String::from_utf8(output).map_err(|e| e.into())
+        }
+        #[cfg(feature = "toon")]
+        Format::Toon => {
+            // TOON output via transform - real TOON emitter
+            let json_bytes = serde_json::to_vec(value)?;
+            let opts = TransformOptions::new().with_pretty(pretty);
+            let (output, _metrics) =
+                transform(&json_bytes, FormatKind::Json, FormatKind::Toon, &opts)
+                    .map_err(|e| format!("TOON transform error: {e}"))?;
+            String::from_utf8(output).map_err(|e| e.into())
+        }
+        #[allow(unreachable_patterns)]
+        _ => Err("Unsupported output format".into()),
     }
-    let elapsed = start.elapsed();
-    println!("Benchmark: 100 parses in {elapsed:?}");
 }
 
+// ============================================================================
+// I/O Helpers
+// ============================================================================
+
+/// Read input from file or stdin
 fn read_input(path: Option<&PathBuf>) -> Result<String, Box<dyn std::error::Error>> {
     if let Some(p) = path {
         Ok(fs::read_to_string(p)?)
@@ -498,9 +609,1533 @@ fn read_input(path: Option<&PathBuf>) -> Result<String, Box<dyn std::error::Erro
     }
 }
 
-fn write_output(output: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-    handle.write_all(output.as_bytes())?;
+/// Write output to file or stdout
+fn write_output(output: &str, path: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    if let Some(p) = path {
+        fs::write(p, output)?;
+    } else {
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
+        handle.write_all(output.as_bytes())?;
+        if !output.ends_with('\n') {
+            handle.write_all(b"\n")?;
+        }
+    }
     Ok(())
+}
+
+// ============================================================================
+// Command Handlers
+// ============================================================================
+
+fn main() {
+    let args = Args::parse();
+
+    let result = match &args.command {
+        Commands::Gron { .. } => handle_gron(&args),
+        Commands::Diff { .. } => handle_diff(&args),
+        Commands::Patch { .. } => handle_patch(&args),
+        Commands::Merge { .. } => handle_merge(&args),
+        Commands::Query { .. } => handle_query(&args),
+        Commands::Convert { .. } => handle_convert(&args),
+        Commands::Format { .. } => handle_format(&args),
+        Commands::Validate { .. } => handle_validate(&args),
+        Commands::Stream { .. } => handle_stream(&args),
+        Commands::Schema { .. } => handle_schema(&args),
+        Commands::Ops { .. } => handle_ops(&args),
+        Commands::Stats { .. } => handle_stats(&args),
+        Commands::Bench { .. } => {
+            handle_bench(&args);
+            Ok(())
+        }
+    };
+
+    if let Err(e) = result {
+        eprintln!("Error: {e}");
+        std::process::exit(1);
+    }
+}
+
+fn handle_gron(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Gron {
+        input,
+        ungron,
+        compact,
+        paths_only,
+        values_only,
+        prefix,
+        query,
+        sort,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content = read_input(input.as_ref())?;
+    let input_format = resolve_input_format(args.from, input.as_deref(), content.as_bytes());
+
+    if *ungron {
+        // Convert gron back to structured format
+        let value = ungron_to_value(&content)?;
+        let output_format = resolve_output_format(args.to, Format::Json);
+        let output = value_to_string(&value, output_format, args.pretty, args.compact, 2)?;
+        write_output(&output, args.output.as_ref())?;
+        return Ok(());
+    }
+
+    // Build gron options
+    let mut opts = GronOptions::with_prefix(prefix);
+    if *compact || args.compact {
+        opts = opts.compact();
+    }
+    if *paths_only {
+        opts = opts.paths_only();
+    }
+    if *values_only {
+        opts = opts.values_only();
+    }
+    if args.color {
+        opts = opts.color();
+    }
+
+    // For JSON input, use tape-based gron for maximum performance
+    // For other formats, parse to value first then use value-based gron
+    let output = if input_format == Format::Json || input_format == Format::Auto {
+        // Try tape-based gron first (fastest path)
+        match DsonTape::parse(&content) {
+            Ok(tape) => {
+                if let Some(query_str) = query {
+                    // For query mode, use value-based path
+                    let json_str = serde_json::to_string(&tape_to_value(&tape)?)?;
+                    let q = Query::parse(query_str)?;
+                    let query_opts = GronQueryOptions {
+                        gron: opts.clone(),
+                        max_matches: 0,
+                        include_containers: false,
+                    };
+                    gron_query(&json_str, &q, &query_opts)?
+                } else {
+                    // Use tape-based gron for maximum performance
+                    let mut result = gron_from_tape(&tape, &opts)?;
+                    if *sort {
+                        let mut lines: Vec<&str> = result.lines().collect();
+                        lines.sort_unstable();
+                        result = lines.join("\n");
+                    }
+                    result
+                }
+            }
+            Err(_) => {
+                // Fall back to value-based gron
+                let value = parse_to_value(&content, input_format)?;
+                let json_str = serde_json::to_string(&value)?;
+                let mut result = gron(&json_str, &opts)?;
+                if *sort {
+                    let mut lines: Vec<&str> = result.lines().collect();
+                    lines.sort_unstable();
+                    result = lines.join("\n");
+                }
+                result
+            }
+        }
+    } else {
+        // Non-JSON input: parse to value first
+        let value = parse_to_value(&content, input_format)?;
+        let json_str = serde_json::to_string(&value)?;
+
+        if let Some(query_str) = query {
+            let q = Query::parse(query_str)?;
+            let query_opts = GronQueryOptions {
+                gron: opts,
+                max_matches: 0,
+                include_containers: false,
+            };
+            gron_query(&json_str, &q, &query_opts)?
+        } else {
+            let mut result = gron(&json_str, &opts)?;
+            if *sort {
+                let mut lines: Vec<&str> = result.lines().collect();
+                lines.sort_unstable();
+                result = lines.join("\n");
+            }
+            result
+        }
+    };
+
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_diff(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Diff {
+        file1,
+        file2,
+        diff_format,
+        ignore_order,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content1 = fs::read_to_string(file1)?;
+    let content2 = fs::read_to_string(file2)?;
+
+    let format1 = resolve_input_format(args.from, Some(file1), content1.as_bytes());
+    let format2 = resolve_input_format(args.from, Some(file2), content2.as_bytes());
+
+    // Parse both files to values (works with all formats)
+    let mut value1 = parse_to_value(&content1, format1)?;
+    let mut value2 = parse_to_value(&content2, format2)?;
+
+    // If ignore-order is set, sort all arrays recursively
+    if *ignore_order {
+        value1 = sort_arrays_recursive(&value1);
+        value2 = sort_arrays_recursive(&value2);
+    }
+
+    // For JSON-only inputs, we can use tape-based operations for better performance
+    let both_json = format1 == Format::Json && format2 == Format::Json;
+
+    let output = match diff_format.as_str() {
+        "merge-patch" => {
+            // RFC 7396 merge patch - just output the target as the patch
+            serde_json::to_string_pretty(&value2)?
+        }
+        "gron" => {
+            // Diff as gron (show changed lines)
+            let json1 = serde_json::to_string(&value1)?;
+            let json2 = serde_json::to_string(&value2)?;
+
+            // Use tape-based gron for JSON, value-based for others
+            let (gron1, gron2) = if both_json {
+                let tape1 = DsonTape::parse(&content1).map_err(|e| format!("Parse error: {e}"))?;
+                let tape2 = DsonTape::parse(&content2).map_err(|e| format!("Parse error: {e}"))?;
+                (
+                    gron_from_tape(&tape1, &GronOptions::default())?,
+                    gron_from_tape(&tape2, &GronOptions::default())?,
+                )
+            } else {
+                (
+                    gron(&json1, &GronOptions::default())?,
+                    gron(&json2, &GronOptions::default())?,
+                )
+            };
+
+            let lines1: std::collections::HashSet<&str> = gron1.lines().collect();
+            let lines2: std::collections::HashSet<&str> = gron2.lines().collect();
+
+            let mut diff_lines = Vec::new();
+            for line in &lines1 {
+                if !lines2.contains(line) {
+                    diff_lines.push(format!("- {line}"));
+                }
+            }
+            for line in &lines2 {
+                if !lines1.contains(line) {
+                    diff_lines.push(format!("+ {line}"));
+                }
+            }
+            diff_lines.sort_unstable();
+            diff_lines.join("\n")
+        }
+        "tape" => {
+            // Native tape diff - only works for JSON inputs
+            if !both_json {
+                return Err("--diff-format=tape only works with JSON inputs. Use default json-patch for cross-format diff.".into());
+            }
+            let tape1 = DsonTape::parse(&content1).map_err(|e| format!("Parse error: {e}"))?;
+            let tape2 = DsonTape::parse(&content2).map_err(|e| format!("Parse error: {e}"))?;
+            let tape_diff = diff_tapes(&tape1, &tape2)?;
+            // Convert TapeDiff operations to JSON array for output
+            let ops: Vec<serde_json::Value> = tape_diff
+                .operations
+                .iter()
+                .map(|op| match op {
+                    fionn_diff::TapeDiffOp::Add { path, value } => {
+                        serde_json::json!({"op": "add", "path": path, "value": format!("{value:?}")})
+                    }
+                    fionn_diff::TapeDiffOp::Remove { path } => {
+                        serde_json::json!({"op": "remove", "path": path})
+                    }
+                    fionn_diff::TapeDiffOp::Replace { path, value } => {
+                        serde_json::json!({"op": "replace", "path": path, "value": format!("{value:?}")})
+                    }
+                    fionn_diff::TapeDiffOp::Move { from, path } => {
+                        serde_json::json!({"op": "move", "from": from, "path": path})
+                    }
+                    fionn_diff::TapeDiffOp::Copy { from, path } => {
+                        serde_json::json!({"op": "copy", "from": from, "path": path})
+                    }
+                    _ => serde_json::json!({"op": "unknown"}),
+                })
+                .collect();
+            serde_json::to_string_pretty(&ops)?
+        }
+        _ => {
+            // Default: JSON Patch (RFC 6902) - works with all formats
+            let patch = json_diff(&value1, &value2);
+            serde_json::to_string_pretty(&patch)?
+        }
+    };
+
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_patch(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Patch {
+        file,
+        patch,
+        patch_format,
+        dry_run,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content = fs::read_to_string(file)?;
+    let patch_content = fs::read_to_string(patch)?;
+
+    let input_format = resolve_input_format(args.from, Some(file), content.as_bytes());
+    let value = parse_to_value(&content, input_format)?;
+
+    let patched = if patch_format.as_str() == "merge-patch" {
+        let patch_value: Value = serde_json::from_str(&patch_content)?;
+        json_merge_patch(&value, &patch_value)
+    } else {
+        // JSON Patch (RFC 6902)
+        let patch_ops: fionn_diff::JsonPatch = serde_json::from_str(&patch_content)?;
+        apply_patch(&value, &patch_ops)?
+    };
+
+    let output_format = resolve_output_format(args.to, input_format);
+    let output = value_to_string(&patched, output_format, args.pretty, args.compact, 2)?;
+
+    if *dry_run && !args.quiet {
+        eprintln!("Dry run - would produce:");
+    }
+
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_merge(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Merge {
+        files,
+        deep,
+        array_strategy,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    if files.is_empty() {
+        return Err("No files provided for merge".into());
+    }
+
+    // Parse first file as base (works with all formats)
+    let content = fs::read_to_string(&files[0])?;
+    let input_format = resolve_input_format(args.from, Some(&files[0]), content.as_bytes());
+    let mut result = parse_to_value(&content, input_format)?;
+
+    // Check if all files are JSON for potential tape-based optimization
+    let all_json = input_format == Format::Json
+        && files[1..].iter().all(|f| {
+            fs::read(f)
+                .map(|c| resolve_input_format(args.from, Some(f), &c) == Format::Json)
+                .unwrap_or(false)
+        });
+
+    // Only use tape-based merge for simple replace strategy (default behavior)
+    let use_tape_optimization = all_json && files.len() == 2 && array_strategy == "replace";
+
+    if use_tape_optimization {
+        // Optimize: use tape-based merge for two JSON files
+        let overlay_content = fs::read_to_string(&files[1])?;
+        let base_tape = DsonTape::parse(&content).map_err(|e| format!("Parse error: {e}"))?;
+        let overlay_tape =
+            DsonTape::parse(&overlay_content).map_err(|e| format!("Parse error: {e}"))?;
+
+        result = if *deep {
+            deep_merge_tapes(&base_tape, &overlay_tape)?
+        } else {
+            merge_tapes(&base_tape, &overlay_tape)?
+        };
+    } else {
+        // General case: value-based merge with array strategy support
+        for file in &files[1..] {
+            let file_content = fs::read_to_string(file)?;
+            let file_format = resolve_input_format(args.from, Some(file), file_content.as_bytes());
+            let overlay_value = parse_to_value(&file_content, file_format)?;
+
+            result = if *deep {
+                deep_merge_with_array_strategy(&result, &overlay_value, array_strategy)
+            } else {
+                json_merge_patch(&result, &overlay_value)
+            };
+        }
+    }
+
+    let output_format = resolve_output_format(args.to, input_format);
+    let output = value_to_string(&result, output_format, args.pretty, args.compact, 2)?;
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_query(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Query {
+        query,
+        file,
+        raw,
+        first,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+    let value = parse_to_value(&content, input_format)?;
+
+    // Execute query and collect matching values
+    let matches = execute_query(&value, query)?;
+
+    // Apply --first flag
+    let matches = if *first && !matches.is_empty() {
+        vec![matches.into_iter().next().unwrap()]
+    } else {
+        matches
+    };
+
+    // Format output
+    let output_format = resolve_output_format(args.to, Format::Json);
+    let output = if *raw {
+        // Raw mode: output values without JSON encoding (strings unquoted)
+        matches
+            .iter()
+            .map(|v| match v {
+                Value::String(s) => s.clone(),
+                Value::Null => "null".to_string(),
+                Value::Bool(b) => b.to_string(),
+                Value::Number(n) => n.to_string(),
+                other => serde_json::to_string(other).unwrap_or_default(),
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else if matches.len() == 1 {
+        // Single result: output directly
+        value_to_string(&matches[0], output_format, args.pretty, args.compact, 2)?
+    } else {
+        // Multiple results: output as array
+        let arr = Value::Array(matches);
+        value_to_string(&arr, output_format, args.pretty, args.compact, 2)?
+    };
+
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+/// Execute a JSONPath-like query and return matching values
+fn execute_query(value: &Value, query: &str) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+    let mut results = Vec::new();
+    let query = query.trim();
+
+    // Handle root query
+    if query == "." || query.is_empty() {
+        return Ok(vec![value.clone()]);
+    }
+
+    // Parse and execute query segments
+    let segments = parse_query_path(query)?;
+    collect_query_matches(value, &segments, 0, &mut results);
+
+    Ok(results)
+}
+
+/// Parse query path into segments
+fn parse_query_path(query: &str) -> Result<Vec<QuerySegmentParsed>, Box<dyn std::error::Error>> {
+    let mut segments = Vec::new();
+    let mut query = query.trim_start_matches('$');
+
+    // Handle leading .. for recursive descent
+    if query.starts_with("..") {
+        query = &query[2..];
+        // Collect field name after ..
+        let field_end = query
+            .find(|c: char| c == '.' || c == '[')
+            .unwrap_or(query.len());
+        let field = &query[..field_end];
+        if !field.is_empty() {
+            segments.push(QuerySegmentParsed::RecursiveField(field.to_string()));
+        }
+        query = &query[field_end..];
+    } else if query.starts_with('.') {
+        query = &query[1..];
+    }
+
+    if query.is_empty() {
+        return Ok(segments);
+    }
+
+    let mut chars = query.chars().peekable();
+    let mut current = String::new();
+
+    while let Some(c) = chars.next() {
+        match c {
+            '.' => {
+                if !current.is_empty() {
+                    segments.push(QuerySegmentParsed::Field(current.clone()));
+                    current.clear();
+                }
+                // Check for recursive descent (..)
+                if chars.peek() == Some(&'.') {
+                    chars.next();
+                    // Collect the field name after ..
+                    while let Some(&nc) = chars.peek() {
+                        if nc == '.' || nc == '[' {
+                            break;
+                        }
+                        current.push(chars.next().unwrap());
+                    }
+                    if !current.is_empty() {
+                        segments.push(QuerySegmentParsed::RecursiveField(current.clone()));
+                        current.clear();
+                    }
+                }
+            }
+            '[' => {
+                if !current.is_empty() {
+                    segments.push(QuerySegmentParsed::Field(current.clone()));
+                    current.clear();
+                }
+                // Parse bracket content
+                let mut bracket_content = String::new();
+                for bc in chars.by_ref() {
+                    if bc == ']' {
+                        break;
+                    }
+                    bracket_content.push(bc);
+                }
+                // Determine bracket type
+                if bracket_content == "*" {
+                    segments.push(QuerySegmentParsed::Wildcard);
+                } else if let Ok(idx) = bracket_content.parse::<usize>() {
+                    segments.push(QuerySegmentParsed::Index(idx));
+                } else {
+                    // Quoted field name
+                    let field = bracket_content.trim_matches('"').trim_matches('\'');
+                    segments.push(QuerySegmentParsed::Field(field.to_string()));
+                }
+            }
+            '*' => {
+                if !current.is_empty() {
+                    segments.push(QuerySegmentParsed::Field(current.clone()));
+                    current.clear();
+                }
+                segments.push(QuerySegmentParsed::Wildcard);
+            }
+            _ => {
+                current.push(c);
+            }
+        }
+    }
+
+    if !current.is_empty() {
+        segments.push(QuerySegmentParsed::Field(current));
+    }
+
+    Ok(segments)
+}
+
+#[derive(Debug, Clone)]
+enum QuerySegmentParsed {
+    Field(String),
+    Index(usize),
+    Wildcard,
+    RecursiveField(String),
+}
+
+/// Collect values matching query segments
+fn collect_query_matches(
+    value: &Value,
+    segments: &[QuerySegmentParsed],
+    segment_idx: usize,
+    results: &mut Vec<Value>,
+) {
+    if segment_idx >= segments.len() {
+        results.push(value.clone());
+        return;
+    }
+
+    match &segments[segment_idx] {
+        QuerySegmentParsed::Field(name) => {
+            if let Value::Object(obj) = value {
+                if let Some(v) = obj.get(name) {
+                    collect_query_matches(v, segments, segment_idx + 1, results);
+                }
+            }
+        }
+        QuerySegmentParsed::Index(idx) => {
+            if let Value::Array(arr) = value {
+                if let Some(v) = arr.get(*idx) {
+                    collect_query_matches(v, segments, segment_idx + 1, results);
+                }
+            }
+        }
+        QuerySegmentParsed::Wildcard => match value {
+            Value::Array(arr) => {
+                for item in arr {
+                    collect_query_matches(item, segments, segment_idx + 1, results);
+                }
+            }
+            Value::Object(obj) => {
+                for v in obj.values() {
+                    collect_query_matches(v, segments, segment_idx + 1, results);
+                }
+            }
+            _ => {}
+        },
+        QuerySegmentParsed::RecursiveField(name) => {
+            // Search recursively for the field
+            recursive_field_search(value, name, segments, segment_idx + 1, results);
+        }
+    }
+}
+
+/// Recursively search for a field name
+fn recursive_field_search(
+    value: &Value,
+    field_name: &str,
+    segments: &[QuerySegmentParsed],
+    next_segment: usize,
+    results: &mut Vec<Value>,
+) {
+    match value {
+        Value::Object(obj) => {
+            // Check if this object has the field
+            if let Some(v) = obj.get(field_name) {
+                collect_query_matches(v, segments, next_segment, results);
+            }
+            // Recurse into all values
+            for v in obj.values() {
+                recursive_field_search(v, field_name, segments, next_segment, results);
+            }
+        }
+        Value::Array(arr) => {
+            for item in arr {
+                recursive_field_search(item, field_name, segments, next_segment, results);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn handle_convert(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Convert { file, sort_keys } = &args.command else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+    let mut value = parse_to_value(&content, input_format)?;
+
+    if *sort_keys {
+        value = sort_json_keys(&value);
+    }
+
+    let output_format = args.to.unwrap_or(Format::Json);
+    if output_format == Format::Auto {
+        return Err("Output format must be specified with --to for convert command".into());
+    }
+
+    let output = value_to_string(&value, output_format, args.pretty, args.compact, 2)?;
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_format(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Format {
+        file,
+        indent,
+        sort_keys,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+    let mut value = parse_to_value(&content, input_format)?;
+
+    if *sort_keys {
+        value = sort_json_keys(&value);
+    }
+
+    let output_format = resolve_output_format(args.to, input_format);
+    let output = value_to_string(&value, output_format, true, args.compact, *indent)?;
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_validate(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Validate { file, strict } = &args.command else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+
+    // Try to parse - will error if invalid
+    let value = parse_to_value(&content, input_format)?;
+
+    // Strict mode: additional validation checks
+    if *strict {
+        let mut warnings = Vec::new();
+        validate_strict(&value, "", &mut warnings);
+
+        if !warnings.is_empty() {
+            for warning in &warnings {
+                eprintln!("Warning: {warning}");
+            }
+            return Err(format!(
+                "Strict validation failed with {} warning(s)",
+                warnings.len()
+            )
+            .into());
+        }
+    }
+
+    if !args.quiet {
+        let format_name = match input_format {
+            Format::Json => "JSON",
+            #[cfg(feature = "yaml")]
+            Format::Yaml => "YAML",
+            #[cfg(feature = "toml")]
+            Format::Toml => "TOML",
+            #[cfg(feature = "csv")]
+            Format::Csv => "CSV",
+            #[cfg(feature = "ison")]
+            Format::Ison => "ISON",
+            #[cfg(feature = "toon")]
+            Format::Toon => "TOON",
+            Format::Gron => "Gron",
+            Format::Auto => "Auto-detected",
+        };
+        let mode = if *strict { " (strict)" } else { "" };
+        println!("{format_name} is valid{mode}");
+    }
+    Ok(())
+}
+
+/// Perform strict validation checks on a value
+fn validate_strict(value: &Value, path: &str, warnings: &mut Vec<String>) {
+    match value {
+        Value::Object(obj) => {
+            // Check for empty keys
+            for (key, val) in obj {
+                if key.is_empty() {
+                    warnings.push(format!(
+                        "Empty key at {}",
+                        if path.is_empty() { "root" } else { path }
+                    ));
+                }
+                // Check for duplicate-looking keys (case insensitive)
+                let lower_key = key.to_lowercase();
+                let has_case_duplicate = obj
+                    .keys()
+                    .any(|k| k.to_lowercase() == lower_key && k != key);
+                if has_case_duplicate {
+                    warnings.push(format!(
+                        "Case-insensitive duplicate key '{}' at {}",
+                        key,
+                        if path.is_empty() { "root" } else { path }
+                    ));
+                }
+
+                let new_path = if path.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{path}.{key}")
+                };
+                validate_strict(val, &new_path, warnings);
+            }
+        }
+        Value::Array(arr) => {
+            // Check for mixed types in arrays
+            if arr.len() > 1 {
+                let first_type = value_type_name(arr.first());
+                for (i, item) in arr.iter().enumerate().skip(1) {
+                    let item_type = value_type_name(Some(item));
+                    if item_type != first_type && first_type != "null" && item_type != "null" {
+                        warnings.push(format!(
+                            "Mixed array types at {}[{}]: expected {}, found {}",
+                            if path.is_empty() { "root" } else { path },
+                            i,
+                            first_type,
+                            item_type
+                        ));
+                        break; // Only report once per array
+                    }
+                }
+            }
+            for (i, item) in arr.iter().enumerate() {
+                let new_path = format!("{path}[{i}]");
+                validate_strict(item, &new_path, warnings);
+            }
+        }
+        Value::String(s) => {
+            // Check for suspicious string patterns
+            if s.trim().is_empty() && !s.is_empty() {
+                warnings.push(format!(
+                    "Whitespace-only string at {}",
+                    if path.is_empty() { "root" } else { path }
+                ));
+            }
+        }
+        Value::Number(n) => {
+            // Check for NaN-like or problematic numbers
+            if let Some(f) = n.as_f64() {
+                if f.is_infinite() {
+                    warnings.push(format!(
+                        "Infinite number at {}",
+                        if path.is_empty() { "root" } else { path }
+                    ));
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+const fn value_type_name(value: Option<&Value>) -> &'static str {
+    match value {
+        None => "none",
+        Some(Value::Null) => "null",
+        Some(Value::Bool(_)) => "boolean",
+        Some(Value::Number(_)) => "number",
+        Some(Value::String(_)) => "string",
+        Some(Value::Array(_)) => "array",
+        Some(Value::Object(_)) => "object",
+    }
+}
+
+fn handle_stream(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Stream {
+        file,
+        filter,
+        limit,
+        skip,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+
+    // Process as JSONL (newline-delimited)
+    let mut results = Vec::new();
+    let mut count = 0;
+    let skip_count = skip.unwrap_or(0);
+
+    for line in content.lines() {
+        if line.trim().is_empty() {
+            continue;
+        }
+
+        // Skip initial records if requested
+        if count < skip_count {
+            count += 1;
+            continue;
+        }
+
+        // Parse line
+        let value = parse_to_value(line, input_format)?;
+
+        // Apply filter if specified
+        if let Some(filter_expr) = filter {
+            if !evaluate_filter(&value, filter_expr)? {
+                count += 1;
+                continue; // Skip non-matching records
+            }
+        }
+
+        results.push(value);
+
+        // Check limit
+        if let Some(lim) = limit {
+            if results.len() >= *lim {
+                break;
+            }
+        }
+
+        count += 1;
+    }
+
+    // Output results
+    let output_format = resolve_output_format(args.to, Format::Json);
+    for value in &results {
+        let output = value_to_string(value, output_format, false, true, 0)?;
+        println!("{output}");
+    }
+
+    if !args.quiet {
+        eprintln!("Processed {} records", results.len());
+    }
+    Ok(())
+}
+
+/// Evaluate a filter expression against a value
+/// Supports: path queries (existence check), comparisons (>, <, >=, <=, ==, !=)
+fn evaluate_filter(value: &Value, filter: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    let filter = filter.trim();
+
+    // Try to parse as comparison expression
+    for op in &[">=", "<=", "!=", "==", ">", "<"] {
+        if let Some(pos) = filter.find(op) {
+            let path = filter[..pos].trim();
+            let rhs = filter[pos + op.len()..].trim();
+
+            // Get value at path
+            let matches = execute_query(value, path)?;
+            if matches.is_empty() {
+                return Ok(false);
+            }
+
+            let lhs = &matches[0];
+
+            // Parse right-hand side
+            let rhs_value: Value = if rhs == "null" {
+                Value::Null
+            } else if rhs == "true" {
+                Value::Bool(true)
+            } else if rhs == "false" {
+                Value::Bool(false)
+            } else if let Ok(n) = rhs.parse::<i64>() {
+                Value::Number(n.into())
+            } else if let Ok(n) = rhs.parse::<f64>() {
+                serde_json::Number::from_f64(n)
+                    .map(Value::Number)
+                    .unwrap_or(Value::Null)
+            } else {
+                // String (remove quotes if present)
+                let s = rhs.trim_matches('"').trim_matches('\'');
+                Value::String(s.to_string())
+            };
+
+            return Ok(compare_values(lhs, &rhs_value, op));
+        }
+    }
+
+    // No comparison operator - treat as existence check
+    let matches = execute_query(value, filter)?;
+    Ok(!matches.is_empty())
+}
+
+/// Compare two JSON values with an operator
+fn compare_values(lhs: &Value, rhs: &Value, op: &str) -> bool {
+    match op {
+        "==" => lhs == rhs,
+        "!=" => lhs != rhs,
+        ">" | ">=" | "<" | "<=" => {
+            // Numeric comparison
+            let lhs_num = match lhs {
+                Value::Number(n) => n.as_f64(),
+                _ => None,
+            };
+            let rhs_num = match rhs {
+                Value::Number(n) => n.as_f64(),
+                _ => None,
+            };
+
+            match (lhs_num, rhs_num) {
+                (Some(l), Some(r)) => match op {
+                    ">" => l > r,
+                    ">=" => l >= r,
+                    "<" => l < r,
+                    "<=" => l <= r,
+                    _ => false,
+                },
+                _ => {
+                    // String comparison fallback
+                    let lhs_str = match lhs {
+                        Value::String(s) => s.as_str(),
+                        _ => return false,
+                    };
+                    let rhs_str = match rhs {
+                        Value::String(s) => s.as_str(),
+                        _ => return false,
+                    };
+                    match op {
+                        ">" => lhs_str > rhs_str,
+                        ">=" => lhs_str >= rhs_str,
+                        "<" => lhs_str < rhs_str,
+                        "<=" => lhs_str <= rhs_str,
+                        _ => false,
+                    }
+                }
+            }
+        }
+        _ => false,
+    }
+}
+
+fn handle_schema(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Schema {
+        file,
+        schema_format,
+    } = &args.command
+    else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+    let value = parse_to_value(&content, input_format)?;
+
+    let schema = infer_schema(&value);
+
+    let output = match schema_format.as_str() {
+        "typescript" => schema_to_typescript(&schema),
+        "rust" => schema_to_rust(&schema),
+        _ => serde_json::to_string_pretty(&schema)?,
+    };
+
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+#[allow(clippy::too_many_lines)]
+fn handle_ops(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Ops { op, file, path } = &args.command else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+    let value = parse_to_value(&content, input_format)?;
+
+    // Navigate to path if specified
+    let target = if let Some(p) = path {
+        get_at_path(&value, p).ok_or_else(|| format!("Path not found: {p}"))?
+    } else {
+        &value
+    };
+
+    let result: Value = match op.as_str() {
+        "keys" => {
+            if let Value::Object(obj) = target {
+                Value::Array(obj.keys().map(|k| Value::String(k.clone())).collect())
+            } else {
+                return Err("keys requires an object".into());
+            }
+        }
+        "values" => {
+            if let Value::Object(obj) = target {
+                Value::Array(obj.values().cloned().collect())
+            } else {
+                return Err("values requires an object".into());
+            }
+        }
+        "entries" => {
+            if let Value::Object(obj) = target {
+                Value::Array(obj.iter().map(|(k, v)| serde_json::json!([k, v])).collect())
+            } else {
+                return Err("entries requires an object".into());
+            }
+        }
+        "length" | "len" | "count" => match target {
+            Value::Array(arr) => serde_json::json!(arr.len()),
+            Value::Object(obj) => serde_json::json!(obj.len()),
+            Value::String(s) => serde_json::json!(s.len()),
+            _ => return Err("length not applicable to this type".into()),
+        },
+        "type" => {
+            let type_name = match target {
+                Value::Null => "null",
+                Value::Bool(_) => "boolean",
+                Value::Number(_) => "number",
+                Value::String(_) => "string",
+                Value::Array(_) => "array",
+                Value::Object(_) => "object",
+            };
+            Value::String(type_name.to_string())
+        }
+        "flatten" => flatten_value(target, ""),
+        "paths" => {
+            let paths = collect_paths(target, "");
+            Value::Array(paths.into_iter().map(Value::String).collect())
+        }
+        "first" => {
+            if let Value::Array(arr) = target {
+                arr.first().cloned().unwrap_or(Value::Null)
+            } else {
+                return Err("first requires an array".into());
+            }
+        }
+        "last" => {
+            if let Value::Array(arr) = target {
+                arr.last().cloned().unwrap_or(Value::Null)
+            } else {
+                return Err("last requires an array".into());
+            }
+        }
+        "reverse" => {
+            if let Value::Array(arr) = target {
+                let mut reversed = arr.clone();
+                reversed.reverse();
+                Value::Array(reversed)
+            } else {
+                return Err("reverse requires an array".into());
+            }
+        }
+        "sort" => {
+            if let Value::Array(arr) = target {
+                let mut sorted = arr.clone();
+                sorted.sort_by(|a, b| {
+                    let a_str = a.to_string();
+                    let b_str = b.to_string();
+                    a_str.cmp(&b_str)
+                });
+                Value::Array(sorted)
+            } else {
+                return Err("sort requires an array".into());
+            }
+        }
+        "unique" => {
+            if let Value::Array(arr) = target {
+                let mut seen = std::collections::HashSet::new();
+                let unique: Vec<Value> = arr
+                    .iter()
+                    .filter(|v| {
+                        let s = v.to_string();
+                        seen.insert(s)
+                    })
+                    .cloned()
+                    .collect();
+                Value::Array(unique)
+            } else {
+                return Err("unique requires an array".into());
+            }
+        }
+        _ => return Err(format!("Unknown operation: {op}").into()),
+    };
+
+    let output_format = resolve_output_format(args.to, Format::Json);
+    let output = value_to_string(&result, output_format, args.pretty, args.compact, 2)?;
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_stats(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
+    let Commands::Stats { file } = &args.command else {
+        unreachable!()
+    };
+
+    let content = read_input(file.as_ref())?;
+    let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
+    let value = parse_to_value(&content, input_format)?;
+
+    let stats = compute_stats(&value);
+    let output = serde_json::to_string_pretty(&stats)?;
+    write_output(&output, args.output.as_ref())?;
+    Ok(())
+}
+
+fn handle_bench(args: &Args) {
+    use std::time::Instant;
+
+    let Commands::Bench { bench_type } = &args.command else {
+        unreachable!()
+    };
+
+    let data = r#"{"test": "data", "number": 42, "array": [1,2,3], "nested": {"a": 1, "b": 2}}"#
+        .repeat(1000);
+
+    if matches!(bench_type.as_str(), "parse" | "all") {
+        let start = Instant::now();
+        for _ in 0..100 {
+            let _: Value = serde_json::from_str(&data).unwrap();
+        }
+        println!("Parse: 100 iterations in {:?}", start.elapsed());
+    }
+
+    if matches!(bench_type.as_str(), "gron" | "all") {
+        let start = Instant::now();
+        for _ in 0..100 {
+            let _ = gron(&data, &GronOptions::default()).unwrap();
+        }
+        println!("Gron: 100 iterations in {:?}", start.elapsed());
+    }
+
+    if matches!(bench_type.as_str(), "diff" | "all") {
+        let value1: Value = serde_json::from_str(&data).unwrap();
+        let mut value2 = value1.clone();
+        if let Value::Object(ref mut obj) = value2 {
+            obj.insert("new_field".to_string(), serde_json::json!("new_value"));
+        }
+        let start = Instant::now();
+        for _ in 0..100 {
+            let _ = json_diff(&value1, &value2);
+        }
+        println!("Diff: 100 iterations in {:?}", start.elapsed());
+    }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/// Sort JSON object keys recursively
+fn sort_json_keys(value: &Value) -> Value {
+    match value {
+        Value::Object(obj) => {
+            let mut sorted: Vec<_> = obj.iter().collect();
+            sorted.sort_by_key(|(k, _)| *k);
+            let sorted_map: serde_json::Map<String, Value> = sorted
+                .into_iter()
+                .map(|(k, v)| (k.clone(), sort_json_keys(v)))
+                .collect();
+            Value::Object(sorted_map)
+        }
+        Value::Array(arr) => Value::Array(arr.iter().map(sort_json_keys).collect()),
+        other => other.clone(),
+    }
+}
+
+/// Sort all arrays recursively (for ignore-order diff)
+fn sort_arrays_recursive(value: &Value) -> Value {
+    match value {
+        Value::Object(obj) => {
+            let sorted_map: serde_json::Map<String, Value> = obj
+                .iter()
+                .map(|(k, v)| (k.clone(), sort_arrays_recursive(v)))
+                .collect();
+            Value::Object(sorted_map)
+        }
+        Value::Array(arr) => {
+            // First, recursively sort nested structures
+            let mut sorted: Vec<Value> = arr.iter().map(sort_arrays_recursive).collect();
+            // Then sort the array elements themselves by their string representation
+            sorted.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
+            Value::Array(sorted)
+        }
+        other => other.clone(),
+    }
+}
+
+/// Deep merge with configurable array strategy
+fn deep_merge_with_array_strategy(base: &Value, overlay: &Value, array_strategy: &str) -> Value {
+    match (base, overlay) {
+        (Value::Object(base_obj), Value::Object(overlay_obj)) => {
+            let mut result = base_obj.clone();
+            for (key, overlay_val) in overlay_obj {
+                let merged = if let Some(base_val) = result.get(key) {
+                    deep_merge_with_array_strategy(base_val, overlay_val, array_strategy)
+                } else {
+                    overlay_val.clone()
+                };
+                result.insert(key.clone(), merged);
+            }
+            Value::Object(result)
+        }
+        (Value::Array(base_arr), Value::Array(overlay_arr)) => {
+            match array_strategy {
+                "append" => {
+                    // Append overlay array to base array
+                    let mut result = base_arr.clone();
+                    result.extend(overlay_arr.iter().cloned());
+                    Value::Array(result)
+                }
+                "concat" => {
+                    // Same as append but with deduplication
+                    let mut result = base_arr.clone();
+                    for item in overlay_arr {
+                        if !result.iter().any(|x| x == item) {
+                            result.push(item.clone());
+                        }
+                    }
+                    Value::Array(result)
+                }
+                _ => {
+                    // "replace" - default behavior: overlay replaces base
+                    Value::Array(overlay_arr.clone())
+                }
+            }
+        }
+        // For non-matching types or primitives, overlay wins
+        (_, overlay_val) => overlay_val.clone(),
+    }
+}
+
+/// Get value at JSON path
+fn get_at_path<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
+    let mut current = value;
+    for segment in path.split('.').filter(|s| !s.is_empty()) {
+        match current {
+            Value::Object(obj) => {
+                current = obj.get(segment)?;
+            }
+            Value::Array(arr) => {
+                let idx: usize = segment.parse().ok()?;
+                current = arr.get(idx)?;
+            }
+            _ => return None,
+        }
+    }
+    Some(current)
+}
+
+/// Flatten nested object to dotted keys
+fn flatten_value(value: &Value, prefix: &str) -> Value {
+    let mut result = serde_json::Map::new();
+    flatten_recursive(value, prefix, &mut result);
+    Value::Object(result)
+}
+
+fn flatten_recursive(value: &Value, prefix: &str, result: &mut serde_json::Map<String, Value>) {
+    match value {
+        Value::Object(obj) => {
+            for (k, v) in obj {
+                let new_prefix = if prefix.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{prefix}.{k}")
+                };
+                flatten_recursive(v, &new_prefix, result);
+            }
+        }
+        Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                let new_prefix = format!("{prefix}[{i}]");
+                flatten_recursive(v, &new_prefix, result);
+            }
+        }
+        _ => {
+            if !prefix.is_empty() {
+                result.insert(prefix.to_string(), value.clone());
+            }
+        }
+    }
+}
+
+/// Collect all paths in a value
+fn collect_paths(value: &Value, prefix: &str) -> Vec<String> {
+    let mut paths = Vec::new();
+    if !prefix.is_empty() {
+        paths.push(prefix.to_string());
+    }
+
+    match value {
+        Value::Object(obj) => {
+            for (k, v) in obj {
+                let new_prefix = if prefix.is_empty() {
+                    k.clone()
+                } else {
+                    format!("{prefix}.{k}")
+                };
+                paths.extend(collect_paths(v, &new_prefix));
+            }
+        }
+        Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                let new_prefix = format!("{prefix}[{i}]");
+                paths.extend(collect_paths(v, &new_prefix));
+            }
+        }
+        _ => {}
+    }
+    paths
+}
+
+/// Infer JSON Schema from value
+fn infer_schema(value: &Value) -> Value {
+    match value {
+        Value::Null => serde_json::json!({"type": "null"}),
+        Value::Bool(_) => serde_json::json!({"type": "boolean"}),
+        Value::Number(n) => {
+            if n.is_i64() {
+                serde_json::json!({"type": "integer"})
+            } else {
+                serde_json::json!({"type": "number"})
+            }
+        }
+        Value::String(_) => serde_json::json!({"type": "string"}),
+        Value::Array(arr) => {
+            if arr.is_empty() {
+                serde_json::json!({"type": "array"})
+            } else {
+                let item_schema = infer_schema(&arr[0]);
+                serde_json::json!({"type": "array", "items": item_schema})
+            }
+        }
+        Value::Object(obj) => {
+            let mut properties = serde_json::Map::new();
+            let required: Vec<Value> = obj.keys().map(|k| Value::String(k.clone())).collect();
+            for (k, v) in obj {
+                properties.insert(k.clone(), infer_schema(v));
+            }
+            serde_json::json!({
+                "type": "object",
+                "properties": properties,
+                "required": required
+            })
+        }
+    }
+}
+
+/// Convert schema type to TypeScript type string
+fn schema_type_to_ts(schema: &Value) -> String {
+    match schema.get("type").and_then(|t| t.as_str()) {
+        Some("null") => "null".to_string(),
+        Some("boolean") => "boolean".to_string(),
+        Some("integer" | "number") => "number".to_string(),
+        Some("string") => "string".to_string(),
+        Some("array") => {
+            let item_type = schema
+                .get("items")
+                .map_or_else(|| "unknown".to_string(), schema_type_to_ts);
+            format!("{item_type}[]")
+        }
+        Some("object") => schema
+            .get("properties")
+            .and_then(|p| p.as_object())
+            .map_or_else(
+                || "object".to_string(),
+                |props| {
+                    let fields: Vec<String> = props
+                        .iter()
+                        .map(|(k, v)| format!("  {k}: {};", schema_type_to_ts(v)))
+                        .collect();
+                    format!("{{\n{}\n}}", fields.join("\n"))
+                },
+            ),
+        _ => "unknown".to_string(),
+    }
+}
+
+/// Convert schema to TypeScript type definition
+fn schema_to_typescript(schema: &Value) -> String {
+    format!("type Root = {};", schema_type_to_ts(schema))
+}
+
+/// Convert schema type to Rust type string
+fn schema_type_to_rust(schema: &Value, name: &str) -> String {
+    match schema.get("type").and_then(|t| t.as_str()) {
+        Some("null") => "()".to_string(),
+        Some("boolean") => "bool".to_string(),
+        Some("integer") => "i64".to_string(),
+        Some("number") => "f64".to_string(),
+        Some("string") => "String".to_string(),
+        Some("array") => {
+            let item_type = schema.get("items").map_or_else(
+                || "serde_json::Value".to_string(),
+                |s| schema_type_to_rust(s, "Item"),
+            );
+            format!("Vec<{item_type}>")
+        }
+        Some("object") => name.to_string(),
+        _ => "serde_json::Value".to_string(),
+    }
+}
+
+/// Convert schema to Rust type definition
+fn schema_to_rust(schema: &Value) -> String {
+    use std::fmt::Write;
+
+    let mut output = String::from("#[derive(Debug, Serialize, Deserialize)]\n");
+    output.push_str("pub struct Root {\n");
+
+    if let Some(props) = schema.get("properties").and_then(|p| p.as_object()) {
+        for (k, v) in props {
+            let field_type = schema_type_to_rust(v, &to_pascal_case(k));
+            let _ = writeln!(output, "    pub {k}: {field_type},");
+        }
+    }
+
+    output.push_str("}\n");
+    output
+}
+
+/// Convert string to `PascalCase`
+fn to_pascal_case(s: &str) -> String {
+    s.split('_')
+        .map(|word| {
+            let mut chars = word.chars();
+            chars
+                .next()
+                .map_or_else(String::new, |c| c.to_uppercase().chain(chars).collect())
+        })
+        .collect()
+}
+
+/// Count types recursively in a JSON value
+fn count_types(value: &Value, counts: &mut std::collections::HashMap<&'static str, usize>) {
+    let type_name = match value {
+        Value::Null => "null",
+        Value::Bool(_) => "boolean",
+        Value::Number(_) => "number",
+        Value::String(_) => "string",
+        Value::Array(_) => "array",
+        Value::Object(_) => "object",
+    };
+    *counts.entry(type_name).or_insert(0) += 1;
+
+    match value {
+        Value::Array(arr) => {
+            for v in arr {
+                count_types(v, counts);
+            }
+        }
+        Value::Object(obj) => {
+            for v in obj.values() {
+                count_types(v, counts);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Compute max depth of a JSON value
+fn max_depth(value: &Value, current: usize) -> usize {
+    match value {
+        Value::Array(arr) => arr
+            .iter()
+            .map(|v| max_depth(v, current + 1))
+            .max()
+            .unwrap_or(current),
+        Value::Object(obj) => obj
+            .values()
+            .map(|v| max_depth(v, current + 1))
+            .max()
+            .unwrap_or(current),
+        _ => current,
+    }
+}
+
+/// Compute statistics about a value
+fn compute_stats(value: &Value) -> Value {
+    let mut stats = serde_json::Map::new();
+    let mut type_counts = std::collections::HashMap::new();
+    count_types(value, &mut type_counts);
+
+    let types_obj: serde_json::Map<String, Value> = type_counts
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), serde_json::json!(v)))
+        .collect();
+
+    stats.insert("types".to_string(), Value::Object(types_obj));
+    stats.insert(
+        "max_depth".to_string(),
+        serde_json::json!(max_depth(value, 0)),
+    );
+
+    if let Value::Object(obj) = value {
+        stats.insert("top_level_keys".to_string(), serde_json::json!(obj.len()));
+    }
+    if let Value::Array(arr) = value {
+        stats.insert("array_length".to_string(), serde_json::json!(arr.len()));
+    }
+
+    Value::Object(stats)
 }

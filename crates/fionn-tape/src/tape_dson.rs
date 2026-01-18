@@ -405,7 +405,7 @@ mod tests {
     #[test]
     fn test_float_value() {
         let mut processor = TapeDsonProcessor::new();
-        let json = r#"{"pi": 3.14159}"#;
+        let json = r#"{"pi": 1.5}"#;
 
         let tape = DsonTape::parse(json).unwrap();
         processor.extract_operations(&tape).unwrap();
@@ -508,7 +508,7 @@ mod tests {
     #[test]
     fn test_serialize_float() {
         let mut processor = TapeDsonProcessor::new();
-        let json = r#"{"pi": 3.14}"#;
+        let json = r#"{"pi": 1.23}"#;
 
         let tape = DsonTape::parse(json).unwrap();
         processor.extract_operations(&tape).unwrap();

@@ -16,6 +16,15 @@ categories = ["parsing", "encoding"]
 name = "fionn"
 path = "src/lib.rs"
 
+[features]
+default = []
+yaml = ["fionn-simd/yaml", "fionn-core/yaml"]
+toml = ["fionn-simd/toml", "fionn-core/toml"]
+csv = ["fionn-simd/csv", "fionn-core/csv"]
+ison = ["fionn-simd/ison", "fionn-core/ison"]
+toon = ["fionn-simd/toon", "fionn-core/toon"]
+all-formats = ["yaml", "toml", "csv", "ison", "toon"]
+
 [dependencies]
 fionn-core = { path = "../fionn-core", version = "0.1.0" }
 fionn-tape = { path = "../fionn-tape", version = "0.1.0" }
@@ -31,6 +40,7 @@ fionn-pool = { path = "../fionn-pool", version = "0.1.0" }
 criterion = { version = "0.5", features = ["html_reports"] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
 simd-json = "0.14"
 sonic-rs = "0.3"
 proptest = "1.5"
@@ -39,6 +49,7 @@ arbitrary = { version = "1.4", features = ["derive"] }
 rayon = "1.10"
 ahash = "=0.8.11"
 json-patch = "3.0"
+toml = "0.8"
 
 [lints]
 workspace = true
@@ -113,3 +124,59 @@ path = "../../benches/tape_serialization.rs"
 name = "schema_selectivity"
 harness = false
 path = "../../benches/schema_selectivity.rs"
+
+[[bench]]
+name = "format_benchmarks"
+harness = false
+path = "../../benches/format_benchmarks.rs"
+required-features = ["all-formats"]
+
+[[bench]]
+name = "tape_source_benchmark"
+harness = false
+path = "../../benches/tape_source_benchmark.rs"
+
+[[bench]]
+name = "skip_selectivity_benchmark"
+harness = false
+path = "../../benches/skip_selectivity_benchmark.rs"
+
+[[bench]]
+name = "cross_format_skip"
+harness = false
+path = "../../benches/cross_format_skip.rs"
+
+[[bench]]
+name = "tape_to_tape"
+harness = false
+path = "../../benches/tape_to_tape.rs"
+
+[[bench]]
+name = "memory_profile"
+harness = false
+path = "../../benches/memory_profile.rs"
+
+[[bench]]
+name = "diff_patch_merge_crdt"
+harness = false
+path = "../../benches/diff_patch_merge_crdt.rs"
+
+[[bench]]
+name = "streaming_formats"
+harness = false
+path = "../../benches/streaming_formats.rs"
+
+[[bench]]
+name = "real_world_datasets"
+harness = false
+path = "../../benches/real_world_datasets.rs"
+
+[[bench]]
+name = "cross_format_ops"
+harness = false
+path = "../../benches/cross_format_ops.rs"
+
+[[bench]]
+name = "schema_validation"
+harness = false
+path = "../../benches/schema_validation.rs"

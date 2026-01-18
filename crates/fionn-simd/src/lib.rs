@@ -22,6 +22,26 @@ pub mod skip;
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub mod x86;
 
+/// Format-specific SIMD parsers for multi-format support
+#[cfg(any(
+    feature = "yaml",
+    feature = "toml",
+    feature = "csv",
+    feature = "ison",
+    feature = "toon"
+))]
+pub mod formats;
+
+/// Tape-to-tape transformation engine
+#[cfg(any(
+    feature = "yaml",
+    feature = "toml",
+    feature = "csv",
+    feature = "ison",
+    feature = "toon"
+))]
+pub mod transform;
+
 // Re-export key types from skip module
 pub use skip::{
     JsonSkiSkip, LangdaleSkip, ParallelSkipper, ScalarSkip, Skip, SkipResult, SkipStrategy,

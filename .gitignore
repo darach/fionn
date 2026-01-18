@@ -67,3 +67,7 @@ Desktop.ini
 
 # Log files
 *.log
+
+# CodeQL
+codeql-db
+codeql-rust.sarif

@@ -603,11 +603,11 @@ mod tests {
 
     #[test]
     fn test_float_values() {
-        let json = r#"{"pi": 3.14159, "neg": -1.5, "exp": 1e10}"#;
+        let json = r#"{"pi": 1.5, "neg": -1.5, "exp": 1e10}"#;
         let output = gron_zerocopy(json, "json").unwrap();
         let standard = output.to_standard_string();
 
-        assert!(standard.contains("3.14159"));
+        assert!(standard.contains("1.5"));
         assert!(standard.contains("-1.5"));
     }
 

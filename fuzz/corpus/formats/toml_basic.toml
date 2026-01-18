@@ -1,0 +1,18 @@
+[package]
+name = "test"
+version = "1.0.0"
+
+[dependencies]
+serde = "1.0"
+
+[[servers]]
+name = "alpha"
+ip = "10.0.0.1"
+
+[[servers]]
+name = "beta"
+ip = "10.0.0.2"
+
+[database.connection]
+host = "localhost"
+port = 5432
