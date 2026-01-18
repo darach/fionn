@@ -50,6 +50,7 @@
 //! ```
 
 mod gron_core;
+mod gron_generic;
 mod gron_jsonl;
 mod gron_parallel;
 mod gron_query;
@@ -61,6 +62,7 @@ mod simd_escape;
 mod simd_unescape;
 mod simd_utils;
 mod ungron;
+mod ungron_generic;
 
 pub use gron_core::{GronOptions, GronOutput, gron, gron_to_writer};
 pub use gron_jsonl::{
@@ -79,3 +81,7 @@ pub use simd_escape::{escape_json_string_simd, escape_json_to_string};
 pub use simd_unescape::{UnescapeError, unescape_json_string_simd, unescape_json_to_string};
 pub use simd_utils::{escape_json_string, needs_escape, needs_quoting};
 pub use ungron::{ungron, ungron_to_value};
+
+// Generic (format-agnostic) gron operations
+pub use gron_generic::{gron_from_tape, gron_from_tape_to_writer};
+pub use ungron_generic::{ungron_to_json, ungron_with_builder};

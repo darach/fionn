@@ -972,8 +972,8 @@ mod tests {
     #[test]
     fn test_write_raw_value_float() {
         let mut out = Vec::new();
-        write_raw_value("3.14159", &mut out);
-        assert_eq!(out, b"3.14159");
+        write_raw_value("1.5", &mut out);
+        assert_eq!(out, b"1.5");
     }
 
     #[test]

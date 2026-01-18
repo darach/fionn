@@ -533,10 +533,7 @@ mod tests {
     fn test_values_equal_fast_numbers() {
         assert!(values_equal_fast(&json!(42), &json!(42)));
         assert!(!values_equal_fast(&json!(42), &json!(43)));
-        assert!(values_equal_fast(
-            &json!(std::f64::consts::PI),
-            &json!(std::f64::consts::PI)
-        ));
+        assert!(values_equal_fast(&json!(1.5), &json!(1.5)));
     }
 
     #[test]

@@ -1,0 +1,10 @@
+name: Test Config
+version: 1.0
+enabled: true
+items[3]:
+  first
+  second
+  third
+config:
+  host: localhost
+  port: 8080

@@ -1,0 +1,9 @@
+users[3]{id,name,role}:
+  1,Alice,admin
+  2,Bob,user
+  3,Charlie,guest
+data[2|]:
+  value1|value2|value3
+  a|b|c
+server.config.host: localhost
+server.config.port: 8080

@@ -1,0 +1,10 @@
+# ISON with references
+table.orders
+id:int user:user status
+1 :user:1 pending
+2 :user:2 shipped
+
+table.items
+id order:orders product
+1 :orders:1 Widget
+2 :BELONGS_TO:1 Gadget

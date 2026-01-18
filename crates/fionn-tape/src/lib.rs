@@ -9,6 +9,10 @@ use fionn_core::{DsonError, Result};
 pub use fionn_core::{ParsedPath, PathComponent, PathComponentRef};
 use simd_json::value::tape::{Node, Tape};
 
+// TapeSource implementation for DsonTape
+mod tape_source_impl;
+pub use tape_source_impl::{ArrayElementIterator, ObjectFieldIterator};
+
 // Type aliases for performance-optimized collections
 type FastHashMap<K, V> = AHashMap<K, V>;
 type FastHashSet<T> = AHashSet<T>;
@@ -138,14 +142,16 @@ impl DsonTape {
             Node::Object { len, count } => {
                 // For objects, we need to skip the object header plus all field name/value pairs
                 // Each field consists of a string key followed by a value
-                // The 'count' field tells us how many total nodes are in the object
-                let skip_count = if *count > 0 { *count } else { *len * 2 + 1 };
+                // The 'count' field tells us how many nodes AFTER this one belong to the object
+                // We add 1 to include the Object node itself in the skip
+                let skip_count = if *count > 0 { *count + 1 } else { *len * 2 + 1 };
                 Ok(start_index + skip_count)
             }
             Node::Array { len, count } => {
                 // For arrays, skip the array header plus all elements
-                // The 'count' field tells us how many total nodes are in the array
-                let skip_count = if *count > 0 { *count } else { *len + 1 };
+                // The 'count' field tells us how many nodes AFTER this one belong to the array
+                // We add 1 to include the Array node itself in the skip
+                let skip_count = if *count > 0 { *count + 1 } else { *len + 1 };
                 Ok(start_index + skip_count)
             }
             Node::String(_) | Node::Static(_) => {
@@ -1732,11 +1738,11 @@ mod tests {
 
     #[test]
     fn test_extract_value_simd_f64() {
-        let tape = DsonTape::parse(r#"{"val":3.14159}"#).unwrap();
+        let tape = DsonTape::parse(r#"{"val":1.5}"#).unwrap();
         let value = tape.extract_value_simd(2);
         assert!(value.is_some());
         if let Some(SimdValue::Number(n)) = value {
-            assert!(n.contains("3.14"));
+            assert!(n.contains("1.5"));
         }
     }
 

@@ -583,9 +583,9 @@ mod tests {
 
     #[test]
     fn test_query_float() {
-        let json = r#"{"pi": 3.14159}"#;
+        let json = r#"{"pi": 1.5}"#;
         let output = query_gron(json, ".pi");
-        assert!(output.contains("json.pi = 3.14159;"));
+        assert!(output.contains("json.pi = 1.5;"));
     }
 
     // =========================================================================

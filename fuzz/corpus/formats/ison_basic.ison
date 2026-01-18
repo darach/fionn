@@ -1,0 +1,11 @@
+table.users
+id:int name:string email:string active:bool
+1 Alice alice@example.com true
+2 Bob bob@example.com false
+
+object.config
+host localhost
+port 8080
+
+---
+2 users loaded

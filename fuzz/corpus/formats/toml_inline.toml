@@ -1,0 +1,4 @@
+point = { x = 1, y = 2 }
+database.host = "localhost"
+database.port = 5432
+colors = ["red", "green", "blue"]

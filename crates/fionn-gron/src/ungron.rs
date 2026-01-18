@@ -8,6 +8,10 @@ use super::path_extended::{ExtendedPathComponent, parse_extended_path};
 use fionn_core::{DsonError, Result};
 use serde_json::{Map, Value};
 
+/// Maximum array index allowed to prevent OOM from malicious input.
+/// This limits arrays to ~10 million elements which is ~80MB for nulls.
+const MAX_ARRAY_INDEX: usize = 10_000_000;
+
 /// Convert gron output back to JSON string.
 ///
 /// # Errors
@@ -151,6 +155,11 @@ fn set_path(root: &mut Value, path: &[ExtendedPathComponent], value: Value) {
             }
 
             ExtendedPathComponent::ArrayIndex(index) => {
+                // Prevent OOM from excessively large array indices
+                if *index > MAX_ARRAY_INDEX {
+                    return;
+                }
+
                 // Ensure current is an array
                 if !current.is_array() {
                     *current = Value::Array(Vec::new());
@@ -588,5 +597,25 @@ json.formula = "a = b";"#;
         let input = "json = {};\njson.empty = \"\";";
         let value = ungron_to_value(input).unwrap();
         assert_eq!(value["empty"], "");
+    }
+
+    #[test]
+    fn test_large_array_index_rejected() {
+        // This should not OOM - large indices are rejected
+        let input = "json[999999999999] = \"value\";";
+        let value = ungron_to_value(input).unwrap();
+        // The value should be an empty array since the large index was rejected
+        assert!(value.is_array());
+        assert!(value.as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_max_array_index_boundary() {
+        // Index at MAX_ARRAY_INDEX + 1 should be rejected
+        let input = format!("json[{}] = \"value\";", super::MAX_ARRAY_INDEX + 1);
+        let value = ungron_to_value(&input).unwrap();
+        // The value should be an empty array since the large index was rejected
+        assert!(value.is_array());
+        assert!(value.as_array().unwrap().is_empty());
     }
 }

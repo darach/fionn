@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Benchmarks: missing_docs - criterion_group! macro generates undocumentable code
 #![allow(missing_docs)]
+// Benchmarks: clippy lints relaxed for benchmark code (not production)
 #![allow(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+// Benchmarks: cfg features may vary by build configuration
 #![allow(unexpected_cfgs)]
 //! Benchmarks for simd-gron implementation
 //!

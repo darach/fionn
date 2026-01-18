@@ -469,9 +469,9 @@ mod tests {
 
     #[test]
     fn test_parallel_float() {
-        let json = "3.14159";
+        let json = "1.5";
         let output = gron_parallel(json, &GronParallelOptions::default()).unwrap();
-        assert!(output.contains("json = 3.14159;"));
+        assert!(output.contains("json = 1.5;"));
     }
 
     #[test]

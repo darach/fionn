@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Benchmarks: missing_docs - criterion_group! macro generates undocumentable code
 #![allow(missing_docs)]
+// Benchmarks: clippy lints relaxed for benchmark code (not production)
 #![allow(clippy::all, clippy::pedantic, clippy::nursery, clippy::cargo)]
+// Benchmarks: cfg features may vary by build configuration
 #![allow(unexpected_cfgs)]
 //! Benchmarks for JSON diff/patch/merge with baseline comparisons.
 //!
@@ -354,7 +357,7 @@ fn bench_simd_compare(c: &mut Criterion) {
     let mut group = c.benchmark_group("simd_compare");
 
     // Test various string sizes
-    let sizes = [16, 64, 256, 1024, 4096, 16384];
+    let sizes = [16, 64, 256, 1024, 4096, 16_384];
 
     for size in sizes {
         // Identical strings

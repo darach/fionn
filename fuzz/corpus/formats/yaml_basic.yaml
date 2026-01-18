@@ -1,0 +1,10 @@
+---
+name: test
+version: 1.0
+enabled: true
+items:
+  - first
+  - second
+config:
+  host: localhost
+  port: 8080

@@ -6,6 +6,7 @@
 //! schema-matching data.
 
 use bumpalo::Bump;
+use fionn_core::format::FormatKind;
 
 /// SIMD-aligned skip node (64 bytes for cache efficiency)
 #[repr(C, align(64))]
@@ -19,8 +20,10 @@ pub struct SkipNode {
     pub depth: u8,
     /// Schema match flags and metadata
     pub flags: u8,
+    /// Source format kind (JSON, TOML, YAML, etc.)
+    pub format_kind: FormatKind,
     /// Padding for SIMD alignment
-    _padding: [u8; 6],
+    _padding: [u8; 5],
 }
 
 /// Node types for skip tape (compact enum representation)
@@ -184,7 +187,8 @@ impl SkipNode {
             data: 0,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -196,7 +200,8 @@ impl SkipNode {
             data: 0,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -208,7 +213,8 @@ impl SkipNode {
             data: 0,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -220,7 +226,8 @@ impl SkipNode {
             data: 0,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -233,7 +240,8 @@ impl SkipNode {
             data,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -245,7 +253,8 @@ impl SkipNode {
             data: value.to_bits(),
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -257,7 +266,8 @@ impl SkipNode {
             data: value as u64,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -269,7 +279,8 @@ impl SkipNode {
             data: 0,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -281,7 +292,8 @@ impl SkipNode {
             data: 0,
             depth: 0,
             flags: 0,
-            _padding: [0; 6],
+            format_kind: FormatKind::Json,
+            _padding: [0; 5],
         }
     }
 
@@ -296,6 +308,13 @@ impl SkipNode {
     #[must_use]
     pub const fn with_flags(mut self, flags: u8) -> Self {
         self.flags = flags;
+        self
+    }
+
+    /// Set the format kind of the node
+    #[must_use]
+    pub const fn with_format(mut self, format_kind: FormatKind) -> Self {
+        self.format_kind = format_kind;
         self
     }
 }
