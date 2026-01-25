@@ -177,7 +177,7 @@ impl Default for SimdJsonlBatchProcessor {
     }
 }
 
-#[allow(clippy::unused_self, clippy::missing_const_for_fn)]
+#[allow(clippy::unused_self, clippy::missing_const_for_fn)] // Methods may use self for future GPU state
 impl SimdJsonlBatchProcessor {
     /// Create a new SIMD-JSONL batch processor
     #[must_use]
@@ -232,7 +232,7 @@ impl SimdJsonlBatchProcessor {
         let line_boundaries = self.line_boundaries(jsonl_data);
         self.stats.total_lines = line_boundaries.len();
 
-        #[allow(unused_mut)]
+        #[allow(unused_mut)] // Mutated conditionally in GPU path
         let mut documents = Vec::new();
         let mut errors = Vec::new();
         let mut total_schema_match_ratio = 0.0;
@@ -397,7 +397,7 @@ impl SimdJsonlBatchProcessor {
         let line_boundaries = self.line_boundaries(jsonl_data);
         self.stats.total_lines = line_boundaries.len();
 
-        #[allow(unused_mut)]
+        #[allow(unused_mut)] // Mutated conditionally in GPU path
         let mut documents = Vec::new();
         let mut errors = Vec::new();
         let mut total_memory = 0;
@@ -594,7 +594,7 @@ impl SimdJsonlBatchProcessor {
     ///
     /// # Errors
     /// Returns an error if batch processing fails
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)] // Complex batch processing with filtering and statistics
     pub fn process_batch_structural_filtering(
         &mut self,
         jsonl_data: &[u8],
@@ -616,7 +616,7 @@ impl SimdJsonlBatchProcessor {
         let line_boundaries = self.line_boundaries(jsonl_data);
         self.stats.total_lines = line_boundaries.len();
 
-        #[allow(unused_mut)]
+        #[allow(unused_mut)] // Mutated conditionally in GPU path
         let mut documents = Vec::new();
         let mut errors = Vec::new();
         let mut total_schema_match_ratio = 0.0;
@@ -794,7 +794,7 @@ impl SimdJsonlBatchProcessor {
         self.gpu_min_bytes = min_bytes;
     }
 
-    #[allow(clippy::needless_pass_by_ref_mut)]
+    #[allow(clippy::needless_pass_by_ref_mut)] // Will mutate GPU state in future
     fn line_boundaries(&mut self, data: &[u8]) -> Vec<usize> {
         if let Some(boundaries) = self.gpu_line_boundaries(data) {
             return boundaries;
@@ -802,7 +802,7 @@ impl SimdJsonlBatchProcessor {
         self.line_separator.find_line_boundaries(data)
     }
 
-    #[allow(clippy::needless_pass_by_ref_mut)]
+    #[allow(clippy::needless_pass_by_ref_mut)] // Will mutate GPU state in future
     fn structural_positions(&mut self, data: &[u8]) -> Vec<usize> {
         if let Some(positions) = self.gpu_structural_positions(data) {
             return positions;
@@ -810,12 +810,12 @@ impl SimdJsonlBatchProcessor {
         self.structural_detector.find_structural_characters(data)
     }
 
-    #[allow(clippy::unnecessary_wraps)]
+    #[allow(clippy::unnecessary_wraps)] // Returns Result in GPU-enabled builds
     fn try_enable_gpu(&self) -> bool {
         false
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Reserved for future GPU acceleration threshold
     const fn gpu_allowed(&self, data: &[u8]) -> bool {
         data.len() >= 64
     }

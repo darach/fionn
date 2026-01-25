@@ -1928,7 +1928,7 @@ mod tests {
     }
 
     #[test]
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)] // Comprehensive variant coverage test
     fn test_dson_operation_all_variants_equality() {
         // Test equality for all DsonOperation variants
         assert_eq!(

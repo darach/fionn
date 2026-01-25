@@ -34,7 +34,7 @@ impl Default for GronParallelOptions {
 impl GronParallelOptions {
     /// Create options with custom prefix.
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)] // to_string() is not const
+    #[allow(clippy::missing_const_for_fn)] // String::to_string() is not const
     pub fn with_prefix(prefix: &str) -> Self {
         Self {
             prefix: prefix.to_string(),
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn test_options_clone() {
         let opts = GronParallelOptions::with_prefix("test").with_threshold(100);
-        #[allow(clippy::redundant_clone)]
+        #[allow(clippy::redundant_clone)] // Test verifies Clone impl correctness
         let cloned = opts.clone();
         // Verify cloned values match original
         assert_eq!(cloned.prefix, opts.prefix);

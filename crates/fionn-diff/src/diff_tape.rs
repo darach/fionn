@@ -235,7 +235,7 @@ pub fn diff_tapes_with_options<'a, S: TapeSource, T: TapeSource>(
     Ok(diff)
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)] // Recursive diff traversal requires path context
 fn diff_at_path<S: TapeSource, T: TapeSource>(
     source: &S,
     src_idx: usize,
@@ -331,7 +331,7 @@ fn diff_at_path<S: TapeSource, T: TapeSource>(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)] // Recursive diff traversal requires path context
 fn diff_objects<S: TapeSource, T: TapeSource>(
     source: &S,
     src_obj_idx: usize,
@@ -385,7 +385,7 @@ fn diff_objects<S: TapeSource, T: TapeSource>(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(clippy::too_many_arguments)] // Recursive diff traversal requires path context
 fn diff_arrays<S: TapeSource, T: TapeSource>(
     source: &S,
     src_arr_idx: usize,

@@ -1,0 +1,190 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[build-system]
+requires = ["maturin>=1.7,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "fionn"
+version = "0.1.0"
+description = "Fast JSON library with SIMD acceleration - drop-in orjson replacement + extended features"
+readme = "README.md"
+license = { text = "MIT OR Apache-2.0" }
+authors = [
+    { name = "Darach Ennis", email = "darach@gmail.com" }
+]
+keywords = ["json", "simd", "orjson", "jsonl", "isonl", "crdt", "gron", "diff"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Rust",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Text Processing :: General",
+    "Typing :: Typed",
+]
+requires-python = ">=3.9"
+
+# Optional dependencies
+[project.optional-dependencies]
+numpy = ["numpy>=1.20"]
+dev = [
+    "pytest>=8.0",
+    "pytest-benchmark>=4.0",
+    "hypothesis>=6.100",
+    "orjson>=3.10",  # For compatibility testing
+    "mypy>=1.10",
+    "ruff>=0.6",
+]
+all = ["fionn[numpy,dev]"]
+
+[project.urls]
+Homepage = "https://github.com/darach/fionn"
+Repository = "https://github.com/darach/fionn"
+Documentation = "https://github.com/darach/fionn#readme"
+Issues = "https://github.com/darach/fionn/issues"
+
+# =============================================================================
+# MATURIN CONFIGURATION
+# =============================================================================
+[tool.maturin]
+# Build a Python module
+module-name = "fionn"
+
+# Python source directory (for .pyi stubs and __init__.py)
+python-source = "python"
+
+# Features to enable by default
+features = ["pyo3/extension-module"]
+
+# Strip debug symbols for smaller wheels
+strip = true
+
+# Include type stubs in the wheel
+include = [
+    { path = "python/fionn/*.pyi", format = "sdist" },
+    { path = "python/fionn/*.pyi", format = "wheel" },
+    { path = "python/fionn/py.typed", format = "sdist" },
+    { path = "python/fionn/py.typed", format = "wheel" },
+]
+
+# =============================================================================
+# RUFF CONFIGURATION (Rust-based linter/formatter)
+# =============================================================================
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "PTH",    # flake8-use-pathlib
+    "PL",     # Pylint
+    "RUF",    # Ruff-specific rules
+    "ANN",    # flake8-annotations (type hints)
+    "D",      # pydocstyle
+]
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D104",   # Missing docstring in public package
+    "D107",   # Missing docstring in __init__
+    "PLR0913", # Too many arguments
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Tests - relaxed rules for test patterns
+"tests/*" = ["ANN", "D", "PLR2004", "PLC0415", "PTH", "ARG001", "E501", "B017", "F401", "E741", "PLC0206", "PLR0911"]
+# Benchmarks/profiles - exploratory code
+"bench_*.py" = ["ANN", "D", "PLR2004", "PTH", "B023", "PLC0415", "E501", "ARG001", "E741"]
+"profile_*.py" = ["ANN", "D", "PLR2004", "PTH", "B023", "PLC0415", "E501"]
+# Examples - demo code with relaxed rules
+"examples/**/*" = ["ANN", "D", "PLR2004", "PTH", "PLW1510", "T201", "B023", "PLC0415", "E501", "ARG001", "PLR0915", "PLR0912", "E741", "E722", "E402", "RUF001"]
+# Type stubs - Any is acceptable for native extension interfaces
+"*.pyi" = ["ANN401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# =============================================================================
+# MYPY CONFIGURATION
+# =============================================================================
+[tool.mypy]
+python_version = "3.9"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "fionn.*"
+# Native module - trust the stubs
+ignore_missing_imports = false
+
+# =============================================================================
+# PYTEST CONFIGURATION
+# =============================================================================
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "-q",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "benchmark: marks tests as benchmarks",
+]
+
+# =============================================================================
+# UV CONFIGURATION (Rust-based package manager)
+# =============================================================================
+[tool.uv]
+# Use system Python if available
+python-preference = "system"
+
+# Development dependencies managed by uv
+dev-dependencies = [
+    "pytest>=8.0",
+    "pytest-benchmark>=4.0",
+    "hypothesis>=6.100",
+    "orjson>=3.10",
+    "mypy>=1.10",
+    "ruff>=0.6",
+    "maturin>=1.7",
+]

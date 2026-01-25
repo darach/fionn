@@ -11,7 +11,7 @@ use fionn_core::tape_source::{TapeIterator, TapeNodeKind, TapeNodeRef, TapeSourc
 use simd_json::value::tape::Node;
 use std::borrow::Cow;
 
-impl TapeSource for DsonTape {
+impl<S: AsRef<[u8]>> TapeSource for DsonTape<S> {
     fn format(&self) -> FormatKind {
         FormatKind::Json
     }
@@ -116,7 +116,7 @@ impl TapeSource for DsonTape {
     }
 }
 
-impl DsonTape {
+impl<S: AsRef<[u8]>> DsonTape<S> {
     /// Determine if a given index is in a "key position" within an object
     ///
     /// In `simd_json`'s tape format, objects are laid out as:
@@ -228,7 +228,7 @@ impl DsonTape {
     ///
     /// Returns an iterator of (`key_index`, `value_index`) pairs
     #[must_use]
-    pub fn object_fields(&self, object_index: usize) -> Option<ObjectFieldIterator<'_>> {
+    pub fn object_fields(&self, object_index: usize) -> Option<ObjectFieldIterator<'_, S>> {
         let nodes = self.nodes();
         if object_index >= nodes.len() {
             return None;
@@ -249,7 +249,7 @@ impl DsonTape {
     ///
     /// Returns an iterator of element indices
     #[must_use]
-    pub fn array_elements(&self, array_index: usize) -> Option<ArrayElementIterator<'_>> {
+    pub fn array_elements(&self, array_index: usize) -> Option<ArrayElementIterator<'_, S>> {
         let nodes = self.nodes();
         if array_index >= nodes.len() {
             return None;
@@ -268,13 +268,13 @@ impl DsonTape {
 }
 
 /// Iterator over object fields
-pub struct ObjectFieldIterator<'a> {
-    tape: &'a DsonTape,
+pub struct ObjectFieldIterator<'a, S: AsRef<[u8]>> {
+    tape: &'a DsonTape<S>,
     current_index: usize,
     remaining: usize,
 }
 
-impl Iterator for ObjectFieldIterator<'_> {
+impl<S: AsRef<[u8]>> Iterator for ObjectFieldIterator<'_, S> {
     type Item = (usize, usize); // (key_index, value_index)
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -306,16 +306,16 @@ impl Iterator for ObjectFieldIterator<'_> {
     }
 }
 
-impl ExactSizeIterator for ObjectFieldIterator<'_> {}
+impl<S: AsRef<[u8]>> ExactSizeIterator for ObjectFieldIterator<'_, S> {}
 
 /// Iterator over array elements
-pub struct ArrayElementIterator<'a> {
-    tape: &'a DsonTape,
+pub struct ArrayElementIterator<'a, S: AsRef<[u8]>> {
+    tape: &'a DsonTape<S>,
     current_index: usize,
     remaining: usize,
 }
 
-impl Iterator for ArrayElementIterator<'_> {
+impl<S: AsRef<[u8]>> Iterator for ArrayElementIterator<'_, S> {
     type Item = usize; // element_index
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -346,7 +346,7 @@ impl Iterator for ArrayElementIterator<'_> {
     }
 }
 
-impl ExactSizeIterator for ArrayElementIterator<'_> {}
+impl<S: AsRef<[u8]>> ExactSizeIterator for ArrayElementIterator<'_, S> {}
 
 // ============================================================================
 // Tests

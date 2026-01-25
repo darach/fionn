@@ -368,7 +368,7 @@ impl FormatParser for CsvParser {
         0
     }
 
-    #[allow(clippy::naive_bytecount)]
+    #[allow(clippy::naive_bytecount)] // Simple quote counting is acceptable for correctness check
     fn is_in_string(&self, input: &[u8], pos: usize) -> bool {
         // Count quotes before position
         let quotes_before = input[..pos]

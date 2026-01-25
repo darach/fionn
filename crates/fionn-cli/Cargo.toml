@@ -2,7 +2,7 @@
 
 [package]
 name = "fionn-cli"
-version = "0.1.1"
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -23,10 +23,6 @@ path = "src/main.rs"
 [[bin]]
 name = "simd-gron"
 path = "src/simd_gron.rs"
-
-[[bin]]
-name = "gpu-jsonl"
-path = "src/gpu_jsonl_runner.rs"
 
 [[bin]]
 name = "fuzz_tape"
@@ -64,13 +60,12 @@ path = "../../fuzz/targets/fuzz_formats.rs"
 required-features = ["afl-fuzz", "all-formats"]
 
 [features]
-gpu = []
 afl-fuzz = ["dep:afl"]
-yaml = ["fionn-simd/yaml", "fionn-core/yaml", "dep:serde_yaml"]
-toml = ["fionn-simd/toml", "fionn-core/toml", "dep:toml_crate"]
-csv = ["fionn-simd/csv", "fionn-core/csv", "dep:csv"]
-ison = ["fionn-simd/ison", "fionn-core/ison"]
-toon = ["fionn-simd/toon", "fionn-core/toon"]
+yaml = ["fionn-simd/yaml", "fionn-stream/yaml", "dep:serde_yaml"]
+toml = ["fionn-simd/toml", "fionn-stream/toml", "dep:toml_crate"]
+csv = ["fionn-simd/csv", "fionn-stream/csv", "dep:csv"]
+ison = ["fionn-simd/ison", "fionn-stream/ison"]
+toon = ["fionn-simd/toon", "fionn-stream/toon"]
 all-formats = ["yaml", "toml", "csv", "ison", "toon"]
 
 [dependencies]

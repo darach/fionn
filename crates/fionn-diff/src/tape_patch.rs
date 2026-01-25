@@ -137,6 +137,7 @@ fn tape_value_to_json(val: TapeValue<'_>) -> Value {
         TapeValue::RawNumber(s) => {
             // Try to parse as number, fallback to string
             #[allow(clippy::option_if_let_else)]
+            // Chained if-let-else is clearer for fallback parsing
             if let Ok(n) = s.parse::<i64>() {
                 Value::Number(n.into())
             } else if let Ok(f) = s.parse::<f64>() {
@@ -224,9 +225,9 @@ fn tape_value_owned_to_json(val: &TapeValueOwned) -> Value {
             serde_json::Number::from_f64(*f).map_or(Value::Null, Value::Number)
         }
         TapeValueOwned::String(s) => Value::String(s.clone()),
-        TapeValueOwned::RawNumber(s) =>
-        {
+        TapeValueOwned::RawNumber(s) => {
             #[allow(clippy::option_if_let_else)]
+            // Chained if-let-else is clearer for fallback parsing
             if let Ok(n) = s.parse::<i64>() {
                 Value::Number(n.into())
             } else if let Ok(f) = s.parse::<f64>() {

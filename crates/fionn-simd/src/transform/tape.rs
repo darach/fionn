@@ -221,7 +221,8 @@ impl<'a> UnifiedTape<'a> {
     }
 
     /// Parse JSON into unified tape
-    #[allow(clippy::items_after_statements, clippy::missing_transmute_annotations)]
+    #[allow(clippy::items_after_statements)] // Nested helper functions for recursive descent parsing
+    #[allow(clippy::missing_transmute_annotations)] // serde_json internal transmutes
     fn parse_json(input: &'a [u8]) -> TransformResult<Self> {
         let input_str = std::str::from_utf8(input).map_err(|e| TransformError::ParseError {
             format: FormatKind::Json,
@@ -392,7 +393,7 @@ impl<'a> UnifiedTape<'a> {
                 message: e.to_string(),
             })?;
 
-        #[allow(clippy::items_after_statements)]
+        #[allow(clippy::items_after_statements)] // Nested helper function for recursive descent parsing
         fn emit_toml_value(
             tape: &mut UnifiedTape<'_>,
             value: &toml::Value,
@@ -651,7 +652,7 @@ impl<'a> UnifiedTape<'a> {
 
     /// Parse TOON into unified tape
     #[cfg(feature = "toon")]
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)] // Complex format parsing requires handling many cases inline
     fn parse_toon(input: &'a [u8]) -> TransformResult<Self> {
         let input_str = std::str::from_utf8(input).map_err(|e| TransformError::ParseError {
             format: FormatKind::Toon,
@@ -660,7 +661,7 @@ impl<'a> UnifiedTape<'a> {
 
         let mut tape = Self::with_capacity(FormatKind::Toon, input.len() / 10);
         let mut depth = 0usize;
-        #[allow(unused_assignments)]
+        #[allow(unused_assignments)] // max_depth is set unconditionally after initialization
         let mut max_depth = 0usize;
         let mut indent_stack: Vec<usize> = vec![0];
         let mut in_tabular: Option<(Vec<String>, u8)> = None; // (fields, delimiter)
@@ -695,6 +696,7 @@ impl<'a> UnifiedTape<'a> {
 
                 // Extract field names if present
                 #[allow(clippy::option_if_let_else)]
+                // More readable with if-let for nested Option unwrap
                 let fields = if let Some(brace_start) = trimmed.find('{') {
                     let brace_end = trimmed.find('}').unwrap_or(brace_start);
                     trimmed[brace_start + 1..brace_end]
@@ -792,7 +794,7 @@ impl<'a> UnifiedTape<'a> {
         while indent_stack.len() > 1 {
             indent_stack.pop();
             tape.push_object_end();
-            #[allow(unused_assignments)]
+            #[allow(unused_assignments)] // depth tracks structure but value unused after loop
             {
                 depth -= 1;
             }
@@ -850,21 +852,21 @@ impl<'a> UnifiedTape<'a> {
     }
 
     /// Finalize statistics
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Vec::len() is not const
     fn finalize_stats(&mut self) {
         self.stats.node_count = self.nodes.len();
     }
 
     /// Get node count
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Vec::len() is not const
     pub fn len(&self) -> usize {
         self.nodes.len()
     }
 
     /// Check if tape is empty
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Vec::is_empty() is not const
     pub fn is_empty(&self) -> bool {
         self.nodes.is_empty()
     }

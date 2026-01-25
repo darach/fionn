@@ -324,6 +324,10 @@ impl ToonParser {
         // Parse optional fields {field,field}
         let fields = if let Some(fields_start) = header_part.find('{') {
             let fields_end = header_part.find('}')?;
+            // Ensure valid slice bounds (} must come after {)
+            if fields_end <= fields_start {
+                return None;
+            }
             let fields_str = &header_part[fields_start + 1..fields_end];
             Some(
                 fields_str
@@ -500,7 +504,7 @@ impl FormatParser for ToonParser {
         Self::count_indent(&input[line_start..])
     }
 
-    #[allow(clippy::naive_bytecount)]
+    #[allow(clippy::naive_bytecount)] // Simple quote counting is acceptable for correctness check
     fn is_in_string(&self, input: &[u8], pos: usize) -> bool {
         let quotes_before = input[..pos].iter().filter(|&&b| b == b'"').count();
         quotes_before % 2 == 1

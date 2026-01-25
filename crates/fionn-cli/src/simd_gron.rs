@@ -16,7 +16,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "fionn")]
 #[command(version, about, long_about = None)]
-#[allow(clippy::struct_excessive_bools)]
+#[allow(clippy::struct_excessive_bools)] // CLI args naturally have many boolean flags
 struct Args {
     /// Input file (reads from stdin if not provided)
     #[arg(value_name = "FILE")]
@@ -125,7 +125,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[allow(clippy::ref_option)]
+#[allow(clippy::ref_option)] // Pattern matches CLI argument types
 fn read_input(path: &Option<PathBuf>) -> Result<String, Box<dyn std::error::Error>> {
     if let Some(p) = path {
         Ok(fs::read_to_string(p)?)

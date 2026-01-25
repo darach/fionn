@@ -499,7 +499,7 @@ mod tests {
         let options = GronQueryOptions::default()
             .max_matches(7)
             .include_containers();
-        #[allow(clippy::redundant_clone)]
+        #[allow(clippy::redundant_clone)] // Test verifies Clone impl correctness
         let cloned = options.clone();
         assert_eq!(cloned.max_matches, options.max_matches);
         assert_eq!(cloned.include_containers, options.include_containers);

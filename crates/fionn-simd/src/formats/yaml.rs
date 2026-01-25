@@ -233,7 +233,7 @@ impl YamlParser {
 }
 
 impl ChunkMask {
-    #[allow(clippy::unused_self, clippy::missing_const_for_fn)]
+    #[allow(clippy::unused_self, clippy::missing_const_for_fn)] // Placeholder for future string tracking
     fn string_boundary_at(&self, _pos: usize) {
         // Track string boundaries for later processing
     }

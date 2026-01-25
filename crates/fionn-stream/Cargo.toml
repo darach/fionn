@@ -12,8 +12,15 @@ readme = "README.md"
 keywords = ["json", "jsonl", "streaming"]
 categories = ["parsing", "encoding"]
 
-# [features]
-# gpu = ["dep:wgpu", "dep:pollster", "dep:bytemuck"]
+[features]
+default = []
+## Format support (propagates to fionn-simd which propagates to fionn-core)
+yaml = ["fionn-simd/yaml"]
+toml = ["fionn-simd/toml"]
+csv = ["fionn-simd/csv"]
+ison = ["fionn-simd/ison"]
+toon = ["fionn-simd/toon"]
+all-formats = ["yaml", "toml", "csv", "ison", "toon"]
 
 [dependencies]
 fionn-core = { path = "../fionn-core", version = "0.1.0" }
@@ -30,9 +37,6 @@ rayon = "1.8"
 ahash = "=0.8.12"
 smallvec = "1.13"
 dashmap = "6.1"
-wgpu = { version = "28.0.0", optional = true }
-pollster = { version = "0.4.0", optional = true }
-bytemuck = { version = "1.15", features = ["derive"], optional = true }
 
 [lints]
 workspace = true

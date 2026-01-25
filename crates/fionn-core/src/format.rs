@@ -62,7 +62,7 @@ impl FormatKind {
     #[must_use]
     pub fn from_name(name: &str) -> Option<Self> {
         match name.to_lowercase().as_str() {
-            "json" => Some(Self::Json),
+            "json" | "jsonl" => Some(Self::Json),
             #[cfg(feature = "toml")]
             "toml" => Some(Self::Toml),
             #[cfg(feature = "yaml")]
@@ -70,7 +70,7 @@ impl FormatKind {
             #[cfg(feature = "csv")]
             "csv" => Some(Self::Csv),
             #[cfg(feature = "ison")]
-            "ison" => Some(Self::Ison),
+            "ison" | "isonl" => Some(Self::Ison),
             #[cfg(feature = "toon")]
             "toon" => Some(Self::Toon),
             _ => None,
@@ -171,7 +171,7 @@ impl FormatKind {
             #[cfg(feature = "csv")]
             "csv" | "tsv" | "psv" => Some(Self::Csv),
             #[cfg(feature = "ison")]
-            "ison" => Some(Self::Ison),
+            "ison" | "isonl" => Some(Self::Ison),
             #[cfg(feature = "toon")]
             "toon" => Some(Self::Toon),
             _ => None,
@@ -861,7 +861,7 @@ impl FormatSpecificKind {
             Self::YamlAlias => true,
             #[cfg(feature = "ison")]
             Self::IsonRef => true,
-            #[allow(unreachable_patterns)]
+            #[allow(unreachable_patterns)] // Matches feature-gated variants
             _ => false,
         }
     }
@@ -874,7 +874,7 @@ impl FormatSpecificKind {
             Self::YamlAnchor => true,
             #[cfg(feature = "ison")]
             Self::IsonTable | Self::IsonObject => true,
-            #[allow(unreachable_patterns)]
+            #[allow(unreachable_patterns)] // Matches feature-gated variants
             _ => false,
         }
     }
@@ -889,14 +889,15 @@ impl FormatSpecificKind {
             Self::IsonFieldDecl => true,
             #[cfg(feature = "toon")]
             Self::ToonTabular => true,
-            #[allow(unreachable_patterns)]
+            #[allow(unreachable_patterns)] // Matches feature-gated variants
             _ => false,
         }
     }
 
     /// Parse from format:predicate string
     #[must_use]
-    #[allow(unused_variables, clippy::missing_const_for_fn)] // Uses str matching
+    #[allow(unused_variables)] // Variables used conditionally per feature
+    #[allow(clippy::missing_const_for_fn)] // str matching prevents const
     pub fn from_namespaced(format: &str, predicate: &str) -> Option<Self> {
         match format {
             #[cfg(feature = "toml")]

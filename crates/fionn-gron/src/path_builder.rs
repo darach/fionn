@@ -146,7 +146,7 @@ impl Default for PathBuilder {
 ///
 /// Uses a lookup table for small numbers (0-999) for efficiency.
 #[inline]
-#[allow(clippy::cast_possible_truncation)]
+#[allow(clippy::cast_possible_truncation)] // Safe: digit extraction always yields 0-9
 fn write_usize(buffer: &mut Vec<u8>, value: usize) {
     // Fast path for small numbers
     // Truncations are safe: we're extracting digits which are always 0-9

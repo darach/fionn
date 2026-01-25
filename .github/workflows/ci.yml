@@ -57,11 +57,11 @@ jobs:
 
       # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Run Clippy
-        run: cargo clippy --all-targets --features fionn-cli/gpu -- -D warnings
+        run: cargo clippy --all-targets  -- -D warnings
 
       - name: Run Clippy (SARIF)
         run: |
-          cargo clippy --all-targets --features fionn-cli/gpu --message-format=json | clippy-sarif | tee clippy-results.sarif
+          cargo clippy --all-targets  --message-format=json | clippy-sarif | tee clippy-results.sarif
         continue-on-error: true
 
       - name: Upload SARIF
@@ -91,10 +91,10 @@ jobs:
 
       # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Build
-        run: cargo build --features fionn-cli/gpu
+        run: cargo build 
 
       - name: Run tests
-        run: cargo test --features fionn-cli/gpu
+        run: cargo test 
 
   # MSRV check
   msrv:
@@ -114,7 +114,7 @@ jobs:
 
       # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Check MSRV
-        run: cargo check --features fionn-cli/gpu
+        run: cargo check 
 
   # Documentation
   docs:
@@ -132,7 +132,7 @@ jobs:
 
       # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Build documentation
-        run: cargo doc --no-deps --features fionn-cli/gpu
+        run: cargo doc --no-deps 
         env:
           RUSTDOCFLAGS: -D warnings
 
@@ -187,7 +187,7 @@ jobs:
 
       # Note: afl-fuzz feature excluded; requires AFL toolchain not available in CI
       - name: Generate coverage
-        run: cargo llvm-cov --features fionn-cli/gpu --lcov --output-path lcov.info
+        run: cargo llvm-cov  --lcov --output-path lcov.info
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6

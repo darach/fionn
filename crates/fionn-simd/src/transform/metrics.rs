@@ -134,7 +134,7 @@ impl TransformMetrics {
     }
 
     /// Record memory metrics from tape stats
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Arithmetic on usize is not const
     pub fn record_memory(&mut self, tape_nodes: usize, string_bytes: usize, output_cap: usize) {
         self.memory.tape_nodes = tape_nodes;
         self.memory.string_bytes = string_bytes;
@@ -148,28 +148,28 @@ impl TransformMetrics {
 
     /// Get parse latency in nanoseconds
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Duration::as_nanos() is not const
     pub fn parse_latency_ns(&self) -> u128 {
         self.parse_time.as_nanos()
     }
 
     /// Get emit latency in nanoseconds
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Duration::as_nanos() is not const
     pub fn emit_latency_ns(&self) -> u128 {
         self.emit_time.as_nanos()
     }
 
     /// Get total latency in nanoseconds
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Duration::as_nanos() is not const
     pub fn total_latency_ns(&self) -> u128 {
         self.total_time.as_nanos()
     }
 
     /// Get size expansion ratio (output/input)
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Float division is not const
     pub fn expansion_ratio(&self) -> f64 {
         if self.input_bytes > 0 {
             self.output_bytes as f64 / self.input_bytes as f64
@@ -180,21 +180,21 @@ impl TransformMetrics {
 
     /// Get parse throughput in MiB/s
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Float division is not const
     pub fn parse_throughput_mibs(&self) -> f64 {
         self.parse_throughput_bps / (1024.0 * 1024.0)
     }
 
     /// Get emit throughput in MiB/s
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Float division is not const
     pub fn emit_throughput_mibs(&self) -> f64 {
         self.emit_throughput_bps / (1024.0 * 1024.0)
     }
 
     /// Get total throughput in MiB/s
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Float division is not const
     pub fn total_throughput_mibs(&self) -> f64 {
         self.total_throughput_bps / (1024.0 * 1024.0)
     }
@@ -244,14 +244,14 @@ impl MetricsAggregator {
 
     /// Get sample count
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Vec::len() is not const
     pub fn count(&self) -> usize {
         self.samples.len()
     }
 
     /// Calculate mean total time
     #[must_use]
-    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_possible_truncation)] // u128 to u64 truncation acceptable for durations
     pub fn mean_total_time(&self) -> Duration {
         if self.samples.is_empty() {
             return Duration::ZERO;
