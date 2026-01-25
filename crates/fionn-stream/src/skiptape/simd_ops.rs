@@ -221,7 +221,7 @@ impl SimdCharClassifier {
     #[inline]
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[must_use]
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)] // SIMD code benefits from inline processing
     pub fn classify_chunk(&self, chunk: &[u8; 64]) -> CharacterClasses {
         // Helper to convert u8 to i8 for SIMD constants (wrapping is intentional for byte values)
         const fn to_i8(b: u8) -> i8 {

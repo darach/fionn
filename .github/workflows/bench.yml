@@ -1,0 +1,201 @@
+name: Benchmark Regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Restrict permissions for security
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  benchmark:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+
+      - name: Install critcmp
+        run: cargo install critcmp --locked
+
+      # Run benchmarks on PR branch
+      - name: Run benchmarks (PR)
+        run: |
+          cargo bench --bench tape_source_benchmark --all-features -- --noplot --save-baseline pr
+          cargo bench --bench format_benchmarks --all-features -- --noplot --save-baseline pr
+          cargo bench --bench diff_patch_merge_crdt --all-features -- --noplot --save-baseline pr
+          cargo bench --bench streaming_formats --all-features -- --noplot --save-baseline pr
+
+      # Checkout main branch for comparison
+      - name: Checkout main
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          clean: false
+
+      # Run benchmarks on main branch
+      - name: Run benchmarks (main)
+        if: github.event_name == 'pull_request'
+        run: |
+          cargo bench --bench tape_source_benchmark --all-features -- --noplot --save-baseline main
+          cargo bench --bench format_benchmarks --all-features -- --noplot --save-baseline main
+          cargo bench --bench diff_patch_merge_crdt --all-features -- --noplot --save-baseline main
+          cargo bench --bench streaming_formats --all-features -- --noplot --save-baseline main
+
+      # Compare benchmarks
+      - name: Compare benchmarks
+        if: github.event_name == 'pull_request'
+        id: bench_compare
+        run: |
+          echo "## Benchmark Comparison" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Compare and capture output
+          COMPARISON=$(critcmp main pr --threshold 15 2>&1) || true
+
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "$COMPARISON" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+          # Check for regressions (>15% slower)
+          if echo "$COMPARISON" | grep -q "REGRESSION"; then
+            echo "regression=true" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Warning:** Performance regressions detected (>15% slower)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "regression=false" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**No significant regressions detected**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # Post comment on PR
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read comparison from step summary or re-run critcmp
+            const { execSync } = require('child_process');
+            let comparison = '';
+            try {
+              comparison = execSync('critcmp main pr --threshold 15', { encoding: 'utf8' });
+            } catch (e) {
+              comparison = e.stdout || 'Could not compare benchmarks';
+            }
+
+            const regression = '${{ steps.bench_compare.outputs.regression }}' === 'true';
+            const emoji = regression ? '⚠️' : '✅';
+            const status = regression ? 'Regressions detected' : 'No significant regressions';
+
+            const body = `## ${emoji} Benchmark Results: ${status}
+
+            <details>
+            <summary>Click to expand benchmark comparison</summary>
+
+            \`\`\`
+            ${comparison.substring(0, 60000)}
+            \`\`\`
+
+            </details>
+
+            **Threshold:** 15% regression triggers warning
+
+            ---
+            *Benchmarks compare this PR against main branch*
+            `;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('Benchmark Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }
+
+      # Save baseline for main branch pushes
+      - name: Save baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          # Archive criterion data for future comparisons
+          tar -czf benchmark-baseline.tar.gz target/criterion
+          echo "Baseline saved for commit ${{ github.sha }}"
+
+      # Fail on regression (optional - can be made warning-only)
+      - name: Check for regressions
+        if: github.event_name == 'pull_request' && steps.bench_compare.outputs.regression == 'true'
+        run: |
+          echo "::warning::Performance regressions detected. Review benchmark results."
+          # Uncomment the next line to fail the build on regression
+          # exit 1
+
+  # Key performance metrics summary
+  metrics-summary:
+    name: Performance Metrics Summary
+    runs-on: ubuntu-latest
+    needs: benchmark
+    if: always()
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
+
+      - name: Run key metrics
+        run: |
+          echo "## Key Performance Metrics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Run quick subset of benchmarks for metrics
+          cargo bench --bench tape_source_benchmark --all-features -- \
+            --noplot json_gron/direct/medium 2>&1 | \
+            grep -E 'time:|thrpt:' | head -4 >> $GITHUB_STEP_SUMMARY || true
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Expected Baselines" >> $GITHUB_STEP_SUMMARY
+          echo "| Benchmark | Baseline | Threshold |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|----------|-----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| json_parse/medium | 12μs | +15% |" >> $GITHUB_STEP_SUMMARY
+          echo "| json_gron/medium | 15.6μs | +15% |" >> $GITHUB_STEP_SUMMARY
+          echo "| diff_tape/medium | 85ns | +20% |" >> $GITHUB_STEP_SUMMARY
+          echo "| streaming/1000 | 105μs | +15% |" >> $GITHUB_STEP_SUMMARY

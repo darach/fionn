@@ -30,7 +30,6 @@ pub struct IsonParser {
     /// Field names for current block
     field_names: Vec<String>,
     /// Whether parsing ISONL (streaming) format
-    #[allow(dead_code)]
     streaming: bool,
 }
 
@@ -94,6 +93,19 @@ pub enum IsonType {
     Computed,
     /// Reference to another table
     Reference,
+}
+
+/// Parsed ISONL line (self-contained line from streaming format)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IsonlParsedLine {
+    /// Block kind (Table or Object)
+    pub kind: IsonBlockKind,
+    /// Block/table name
+    pub name: String,
+    /// Field declarations with types
+    pub fields: Vec<IsonField>,
+    /// Field values
+    pub values: Vec<String>,
 }
 
 /// ISON reference types
@@ -186,10 +198,170 @@ impl IsonParser {
         FormatKind::Ison
     }
 
+    /// Check if this parser is in streaming (ISONL) mode
+    #[must_use]
+    pub const fn is_streaming(&self) -> bool {
+        self.streaming
+    }
+
+    /// Get the field delimiter for the current mode
+    ///
+    /// - ISON (regular): space-delimited
+    /// - ISONL (streaming): pipe-delimited
+    #[must_use]
+    pub const fn delimiter(&self) -> u8 {
+        if self.streaming { b'|' } else { b' ' }
+    }
+
     /// Reset parser state
     pub fn reset(&mut self) {
         self.current_block = None;
         self.field_names.clear();
+    }
+
+    /// Parse an ISONL line (pipe-delimited self-contained line)
+    ///
+    /// ISONL format: `table.name|field1:type|field2:type|val1|val2`
+    /// Each line is self-contained with schema header.
+    ///
+    /// Returns `(block_name, fields, values)` if successful
+    #[must_use]
+    pub fn parse_isonl_line(line: &[u8]) -> Option<IsonlParsedLine> {
+        let line_str = std::str::from_utf8(line).ok()?;
+        let trimmed = line_str.trim();
+
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            return None;
+        }
+
+        let parts: Vec<&str> = trimmed.split('|').collect();
+        if parts.len() < 2 {
+            return None;
+        }
+
+        // First part is the block header (table.name or object.name)
+        let header = parts[0];
+        let (kind, name) = if let Some(name) = header.strip_prefix("table.") {
+            (IsonBlockKind::Table, name.to_string())
+        } else if let Some(name) = header.strip_prefix("object.") {
+            (IsonBlockKind::Object, name.to_string())
+        } else {
+            return None;
+        };
+
+        // Separate field declarations from values
+        // Field declarations have `:` (type annotation), values don't
+        let mut fields = Vec::new();
+        let mut values = Vec::new();
+        let mut in_values = false;
+
+        for part in &parts[1..] {
+            if !in_values && part.contains(':') {
+                // This is a field declaration
+                fields.push(Self::parse_field_spec(part));
+            } else {
+                // This is a value
+                in_values = true;
+                values.push((*part).to_string());
+            }
+        }
+
+        // Validate field/value count match
+        if fields.len() != values.len() && !fields.is_empty() {
+            return None;
+        }
+
+        Some(IsonlParsedLine {
+            kind,
+            name,
+            fields,
+            values,
+        })
+    }
+
+    /// Parse a field specification (name:type or just name)
+    fn parse_field_spec(spec: &str) -> IsonField {
+        if let Some((name, type_str)) = spec.split_once(':') {
+            IsonField {
+                name: name.to_string(),
+                field_type: IsonType::parse(type_str),
+            }
+        } else {
+            IsonField {
+                name: spec.to_string(),
+                field_type: None,
+            }
+        }
+    }
+
+    /// Convert a parsed ISONL line to JSON
+    #[must_use]
+    pub fn isonl_to_json(parsed: &IsonlParsedLine) -> String {
+        if parsed.fields.is_empty() {
+            // No schema, just return values as array
+            return format!(
+                "{{\"_table\":\"{}\",\"values\":[{}]}}",
+                parsed.name,
+                parsed
+                    .values
+                    .iter()
+                    .map(|v| Self::value_to_json_string(v, None))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            );
+        }
+
+        let mut json = String::from("{");
+
+        for (i, (field, value)) in parsed.fields.iter().zip(parsed.values.iter()).enumerate() {
+            if i > 0 {
+                json.push(',');
+            }
+            json.push('"');
+            json.push_str(&field.name);
+            json.push_str("\":");
+            json.push_str(&Self::value_to_json_string(value, field.field_type));
+        }
+
+        json.push('}');
+        json
+    }
+
+    /// Convert a value to JSON string representation based on type
+    fn value_to_json_string(value: &str, field_type: Option<IsonType>) -> String {
+        match field_type {
+            Some(IsonType::Int | IsonType::Float) => {
+                // Numeric - use as-is if valid, otherwise quote
+                if value.parse::<f64>().is_ok() {
+                    value.to_string()
+                } else {
+                    format!("\"{value}\"")
+                }
+            }
+            Some(IsonType::Bool) => match value.to_lowercase().as_str() {
+                "true" | "1" | "yes" => "true".to_string(),
+                "false" | "0" | "no" => "false".to_string(),
+                _ => format!("\"{value}\""),
+            },
+            Some(IsonType::String) | None => {
+                // String or unknown - quote it
+                let escaped = value
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"")
+                    .replace('\n', "\\n")
+                    .replace('\r', "\\r")
+                    .replace('\t', "\\t");
+                format!("\"{escaped}\"")
+            }
+            Some(IsonType::Reference) => {
+                // Reference - include as string for now
+                format!("\"{value}\"")
+            }
+            Some(IsonType::Computed) => {
+                // Computed - include as null placeholder
+                "null".to_string()
+            }
+        }
     }
 
     /// Detect structural characters in a 64-byte chunk
@@ -406,7 +578,7 @@ impl FormatParser for IsonParser {
         0
     }
 
-    #[allow(clippy::naive_bytecount)]
+    #[allow(clippy::naive_bytecount)] // Simple quote counting is acceptable for correctness check
     fn is_in_string(&self, input: &[u8], pos: usize) -> bool {
         let quotes_before = input[..pos].iter().filter(|&&b| b == b'"').count();
         quotes_before % 2 == 1
@@ -490,5 +662,160 @@ mod tests {
         assert!(IsonParser::is_summary_marker(b"---"));
         assert!(IsonParser::is_summary_marker(b"  ---  "));
         assert!(!IsonParser::is_summary_marker(b"----"));
+    }
+
+    // ========================================================================
+    // ISONL (Streaming) Tests
+    // ========================================================================
+
+    #[test]
+    fn test_parser_streaming_mode() {
+        let regular = IsonParser::new();
+        assert!(!regular.is_streaming());
+        assert_eq!(regular.delimiter(), b' ');
+
+        let streaming = IsonParser::streaming();
+        assert!(streaming.is_streaming());
+        assert_eq!(streaming.delimiter(), b'|');
+    }
+
+    #[test]
+    fn test_parse_isonl_line_basic() {
+        let line = b"table.events|id:int|type:string|1|click";
+        let parsed = IsonParser::parse_isonl_line(line).unwrap();
+
+        assert_eq!(parsed.kind, IsonBlockKind::Table);
+        assert_eq!(parsed.name, "events");
+        assert_eq!(parsed.fields.len(), 2);
+        assert_eq!(parsed.fields[0].name, "id");
+        assert_eq!(parsed.fields[0].field_type, Some(IsonType::Int));
+        assert_eq!(parsed.fields[1].name, "type");
+        assert_eq!(parsed.fields[1].field_type, Some(IsonType::String));
+        assert_eq!(parsed.values, vec!["1", "click"]);
+    }
+
+    #[test]
+    fn test_parse_isonl_line_object() {
+        let line = b"object.config|name:string|value:int|timeout|30";
+        let parsed = IsonParser::parse_isonl_line(line).unwrap();
+
+        assert_eq!(parsed.kind, IsonBlockKind::Object);
+        assert_eq!(parsed.name, "config");
+    }
+
+    #[test]
+    fn test_parse_isonl_line_empty() {
+        assert!(IsonParser::parse_isonl_line(b"").is_none());
+        assert!(IsonParser::parse_isonl_line(b"   ").is_none());
+    }
+
+    #[test]
+    fn test_parse_isonl_line_comment() {
+        assert!(IsonParser::parse_isonl_line(b"# This is a comment").is_none());
+    }
+
+    #[test]
+    fn test_parse_isonl_line_invalid_header() {
+        assert!(IsonParser::parse_isonl_line(b"invalid|id:int|1").is_none());
+    }
+
+    #[test]
+    fn test_isonl_to_json_basic() {
+        let parsed = IsonlParsedLine {
+            kind: IsonBlockKind::Table,
+            name: "users".to_string(),
+            fields: vec![
+                IsonField {
+                    name: "id".to_string(),
+                    field_type: Some(IsonType::Int),
+                },
+                IsonField {
+                    name: "name".to_string(),
+                    field_type: Some(IsonType::String),
+                },
+            ],
+            values: vec!["1".to_string(), "Alice".to_string()],
+        };
+
+        let json = IsonParser::isonl_to_json(&parsed);
+        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"name\":\"Alice\""));
+    }
+
+    #[test]
+    fn test_isonl_to_json_bool_types() {
+        let parsed = IsonlParsedLine {
+            kind: IsonBlockKind::Table,
+            name: "flags".to_string(),
+            fields: vec![IsonField {
+                name: "active".to_string(),
+                field_type: Some(IsonType::Bool),
+            }],
+            values: vec!["true".to_string()],
+        };
+
+        let json = IsonParser::isonl_to_json(&parsed);
+        assert!(json.contains("\"active\":true"));
+    }
+
+    #[test]
+    fn test_isonl_to_json_no_schema() {
+        let parsed = IsonlParsedLine {
+            kind: IsonBlockKind::Table,
+            name: "data".to_string(),
+            fields: vec![],
+            values: vec!["val1".to_string(), "val2".to_string()],
+        };
+
+        let json = IsonParser::isonl_to_json(&parsed);
+        assert!(json.contains("\"_table\":\"data\""));
+        assert!(json.contains("\"values\""));
+    }
+
+    #[test]
+    fn test_value_to_json_string_escaping() {
+        // Test string escaping
+        let result = IsonParser::value_to_json_string("hello\"world", Some(IsonType::String));
+        assert_eq!(result, "\"hello\\\"world\"");
+
+        let result = IsonParser::value_to_json_string("line1\nline2", Some(IsonType::String));
+        assert_eq!(result, "\"line1\\nline2\"");
+    }
+
+    #[test]
+    fn test_value_to_json_string_computed() {
+        let result = IsonParser::value_to_json_string("anything", Some(IsonType::Computed));
+        assert_eq!(result, "null");
+    }
+
+    #[test]
+    fn test_value_to_json_string_reference() {
+        let result = IsonParser::value_to_json_string(":user:1", Some(IsonType::Reference));
+        assert_eq!(result, "\":user:1\"");
+    }
+
+    #[test]
+    fn test_isonl_parsed_line_clone() {
+        let original = IsonlParsedLine {
+            kind: IsonBlockKind::Table,
+            name: "test".to_string(),
+            fields: vec![],
+            values: vec!["a".to_string()],
+        };
+        let cloned = original.clone();
+        assert_eq!(original, cloned);
+    }
+
+    #[test]
+    fn test_isonl_parsed_line_debug() {
+        let parsed = IsonlParsedLine {
+            kind: IsonBlockKind::Object,
+            name: "config".to_string(),
+            fields: vec![],
+            values: vec![],
+        };
+        let debug = format!("{parsed:?}");
+        assert!(debug.contains("IsonlParsedLine"));
+        assert!(debug.contains("config"));
     }
 }

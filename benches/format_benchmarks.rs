@@ -36,7 +36,7 @@ mod generators {
         json
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Benchmark helper used selectively
     pub fn generate_json_nested(depth: usize, width: usize) -> String {
         fn nested_object(depth: usize, width: usize) -> String {
             if depth == 0 {
@@ -55,7 +55,7 @@ mod generators {
         nested_object(depth, width)
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Benchmark helper used selectively
     pub fn generate_json_wide(field_count: usize) -> String {
         let mut json = String::from("{");
         for i in 0..field_count {

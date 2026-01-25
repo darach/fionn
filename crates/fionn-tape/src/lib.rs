@@ -56,9 +56,9 @@ pub enum SimdValue {
 }
 
 /// SIMD-DSON tape wrapper
-pub struct DsonTape {
+pub struct DsonTape<S = Vec<u8>> {
     tape: Tape<'static>,
-    data: Vec<u8>, // Keep the data alive
+    data: S, // Keep the data alive
 }
 
 impl DsonTape {
@@ -78,6 +78,32 @@ impl DsonTape {
         };
 
         Ok(Self { tape, data: bytes })
+    }
+}
+
+impl<S: AsRef<[u8]>> DsonTape<S> {
+    /// Create a DSON tape from existing mutable storage
+    ///
+    /// # Errors
+    /// Returns an error if the JSON is malformed
+    pub fn from_raw(mut data: S) -> Result<Self>
+    where
+        S: AsMut<[u8]> + 'static,
+    {
+        let tape = unsafe {
+            let bytes = data.as_mut();
+            std::mem::transmute::<Tape<'_>, Tape<'static>>(
+                simd_json::to_tape(bytes)
+                    .map_err(|e| DsonError::ParseError(format!("SIMD-JSON parse error: {e}")))?,
+            )
+        };
+
+        Ok(Self { tape, data })
+    }
+
+    /// Get the underlying storage, consuming the tape
+    pub fn into_data(self) -> S {
+        self.data
     }
 
     /// Get the underlying SIMD-JSON tape
@@ -231,7 +257,7 @@ impl DsonTape {
 
         if modifications.is_empty() {
             // Fast path: return original JSON directly (already SIMD-parsed)
-            return Some(String::from_utf8_lossy(&self.data).to_string());
+            return Some(String::from_utf8_lossy(self.data.as_ref()).to_string());
         }
 
         // For modified JSON, we could implement SIMD-accelerated serialization
@@ -308,7 +334,10 @@ impl DsonTape {
     ///
     /// # Errors
     /// Returns an error if filtering fails
-    pub fn filter_by_schema(&self, schema: &std::collections::HashSet<String>) -> Result<Self> {
+    pub fn filter_by_schema(
+        &self,
+        schema: &std::collections::HashSet<String>,
+    ) -> Result<DsonTape<Vec<u8>>> {
         // Convert to JSON, filter by schema, then re-parse with SIMD
         // This ensures correctness while still leveraging SIMD for final parsing
         let full_json = self.to_json_string()?;
@@ -320,7 +349,7 @@ impl DsonTape {
             fionn_core::DsonError::SerializationError(format!("JSON serialize error: {e}"))
         })?;
 
-        Self::parse(&filtered_json)
+        DsonTape::parse(&filtered_json)
     }
 
     /// Recursively filter JSON value by schema paths
@@ -516,21 +545,44 @@ impl DsonTape {
     /// Find a field with the given name in an object starting at the given index
     fn find_field_in_object(&self, field_name: &str, start_index: usize) -> Option<usize> {
         let nodes = self.nodes();
-        let mut index = start_index;
+        if start_index >= nodes.len() {
+            return None;
+        }
 
-        // SIMD-accelerated field name search using memchr-like approach
-        // Look for string nodes that match the field name
-        while index < nodes.len() {
+        // Check if start_index points to an Object node
+        let (num_fields, mut index) = if let Node::Object { len, .. } = &nodes[start_index] {
+            (*len, start_index + 1)
+        } else {
+            // If not at an object node, do a bounded linear search (legacy behavior)
+            let mut idx = start_index;
+            while idx < nodes.len() && idx < start_index + 1000 {
+                if let Node::String(field_str) = &nodes[idx]
+                    && self.simd_string_equals(field_str.as_bytes(), field_name.as_bytes())
+                {
+                    return Some(idx);
+                }
+                idx += 1;
+            }
+            return None;
+        };
+
+        // Properly iterate through object fields (key-value pairs)
+        for _ in 0..num_fields {
+            if index >= nodes.len() {
+                break;
+            }
+
+            // Each field is: key (String node), then value
             if let Node::String(field_str) = &nodes[index] {
-                // SIMD-accelerated string comparison
                 if self.simd_string_equals(field_str.as_bytes(), field_name.as_bytes()) {
                     return Some(index);
                 }
-            }
-            index += 1;
-
-            // Prevent infinite loops in case of malformed data
-            if index > start_index + 1000 {
+                // Skip the key
+                index += 1;
+                // Skip the value
+                index = self.skip_value(index).ok()?;
+            } else {
+                // Unexpected node type where key should be
                 break;
             }
         }
@@ -549,23 +601,47 @@ impl DsonTape {
     /// Find the nth element in an array starting at the given index
     fn find_array_element(&self, target_index: usize, start_index: usize) -> Option<usize> {
         let nodes = self.nodes();
-        let mut index = start_index;
-        let mut current_element = 0;
-
-        while index < nodes.len() && current_element <= target_index {
-            // Skip to next array element
-            match self.skip_value(index) {
-                Ok(new_index) => index = new_index,
-                Err(_) => return None,
-            }
-            current_element += 1;
+        if start_index >= nodes.len() {
+            return None;
         }
 
-        if current_element > target_index {
-            Some(index - 1) // Return the index of the found element
+        // Check if start_index points to an Array node
+        let (array_len, mut index) = if let Node::Array { len, .. } = &nodes[start_index] {
+            (*len, start_index + 1)
         } else {
-            None
+            // If not at an array node, assume we're already inside array content
+            // Legacy behavior: iterate from current position
+            let mut idx = start_index;
+            for i in 0..=target_index {
+                if idx >= nodes.len() {
+                    return None;
+                }
+                if i == target_index {
+                    return Some(idx);
+                }
+                idx = self.skip_value(idx).ok()?;
+            }
+            return None;
+        };
+
+        // Check if target index is within array bounds
+        if target_index >= array_len {
+            return None;
         }
+
+        // Navigate to the target element
+        for i in 0..=target_index {
+            if index >= nodes.len() {
+                return None;
+            }
+            if i == target_index {
+                return Some(index);
+            }
+            // Skip this element to get to the next one
+            index = self.skip_value(index).ok()?;
+        }
+
+        None
     }
 
     /// Serialize the tape to JSON string, applying modifications efficiently
@@ -616,17 +692,17 @@ impl DsonTape {
 }
 
 /// Zero-copy serializer that iterates over tape and applies modifications
-struct TapeSerializer<'a> {
-    tape: &'a DsonTape,
+struct TapeSerializer<'a, S: AsRef<[u8]>> {
+    tape: &'a DsonTape<S>,
     modifications: &'a FastHashMap<String, fionn_core::OperationValue>,
     deletions: &'a FastHashSet<String>,
     output: String,
     current_path: Vec<String>,
 }
 
-impl<'a> TapeSerializer<'a> {
+impl<'a, S: AsRef<[u8]>> TapeSerializer<'a, S> {
     fn new(
-        tape: &'a DsonTape,
+        tape: &'a DsonTape<S>,
         modifications: &'a FastHashMap<String, fionn_core::OperationValue>,
         deletions: &'a FastHashSet<String>,
     ) -> Self {
@@ -634,7 +710,7 @@ impl<'a> TapeSerializer<'a> {
             tape,
             modifications,
             deletions,
-            output: String::with_capacity(tape.data.len() * 2),
+            output: String::with_capacity(64), // Small initial capacity, will grow
             current_path: Vec::new(),
         }
     }
@@ -976,7 +1052,7 @@ impl<'a> TapeSerializer<'a> {
     }
 }
 
-impl DsonTape {
+impl<S: AsRef<[u8]>> DsonTape<S> {
     /// Parse a JSON path into components, handling array notation (SIMD-accelerated)
     #[inline]
     #[must_use]
@@ -1190,20 +1266,20 @@ mod tests {
 
     #[test]
     fn test_parse_path_simple() {
-        let components = DsonTape::parse_path("name");
+        let components = DsonTape::<Vec<u8>>::parse_path("name");
         assert_eq!(components.len(), 1);
         assert!(matches!(&components[0], PathComponent::Field(f) if f == "name"));
     }
 
     #[test]
     fn test_parse_path_nested() {
-        let components = DsonTape::parse_path("user.name");
+        let components = DsonTape::<Vec<u8>>::parse_path("user.name");
         assert_eq!(components.len(), 2);
     }
 
     #[test]
     fn test_parse_path_array() {
-        let components = DsonTape::parse_path("items[0]");
+        let components = DsonTape::<Vec<u8>>::parse_path("items[0]");
         assert_eq!(components.len(), 2);
         assert!(matches!(&components[1], PathComponent::ArrayIndex(0)));
     }
@@ -1477,13 +1553,13 @@ mod tests {
 
     #[test]
     fn test_parse_path_empty() {
-        let components = DsonTape::parse_path("");
+        let components = DsonTape::<Vec<u8>>::parse_path("");
         assert!(components.is_empty());
     }
 
     #[test]
     fn test_parse_path_complex() {
-        let components = DsonTape::parse_path("users[0].name.first");
+        let components = DsonTape::<Vec<u8>>::parse_path("users[0].name.first");
         assert_eq!(components.len(), 4);
     }
 
@@ -1766,14 +1842,14 @@ mod tests {
     fn test_get_field_value_missing() {
         let _tape = DsonTape::parse(r#"{"name":"test"}"#).unwrap();
         // Test accessing a field that doesn't exist via path
-        let components = DsonTape::parse_path("missing");
+        let components = DsonTape::<Vec<u8>>::parse_path("missing");
         assert_eq!(components.len(), 1);
     }
 
     #[test]
     fn test_get_nested_field_path() {
         let tape = DsonTape::parse(r#"{"user":{"name":"test"}}"#).unwrap();
-        let components = DsonTape::parse_path("user.name");
+        let components = DsonTape::<Vec<u8>>::parse_path("user.name");
         assert_eq!(components.len(), 2);
         let _ = tape;
     }
@@ -1863,7 +1939,7 @@ mod tests {
 
     #[test]
     fn test_parse_complex_path() {
-        let components = DsonTape::parse_path("users[0].profile.name");
+        let components = DsonTape::<Vec<u8>>::parse_path("users[0].profile.name");
         assert_eq!(components.len(), 4);
     }
 
@@ -2091,7 +2167,7 @@ mod tests {
 
     #[test]
     fn test_parse_path_with_multiple_arrays() {
-        let components = DsonTape::parse_path("data[0].items[1].value");
+        let components = DsonTape::<Vec<u8>>::parse_path("data[0].items[1].value");
         assert_eq!(components.len(), 5);
     }
 

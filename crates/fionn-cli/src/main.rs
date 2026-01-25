@@ -10,15 +10,6 @@
 //! - `diff_tapes()` for tape-native diffing (250x faster than DOM)
 //! - `merge_tapes()` for tape-based merging
 
-#![allow(clippy::single_match_else)]
-#![allow(clippy::unnecessary_wraps)]
-#![allow(clippy::option_if_let_else)]
-#![allow(clippy::redundant_clone)]
-#![allow(clippy::map_unwrap_or)]
-#![allow(clippy::collapsible_if)]
-#![allow(clippy::unnecessary_sort_by)]
-#![allow(clippy::manual_pattern_char_comparison)]
-
 use clap::{Parser, Subcommand, ValueEnum};
 use fionn_core::FormatKind;
 use fionn_diff::{
@@ -54,6 +45,8 @@ use fionn_simd::transform::{TransformOptions, transform};
 pub enum Format {
     /// JSON (JavaScript Object Notation)
     Json,
+    /// JSONL (Newline-delimited JSON) - streaming format
+    Jsonl,
     /// YAML (YAML Ain't Markup Language)
     #[cfg(feature = "yaml")]
     Yaml,
@@ -66,6 +59,9 @@ pub enum Format {
     /// ISON (Interchange Simple Object Notation)
     #[cfg(feature = "ison")]
     Ison,
+    /// ISONL (ISON Lines) - streaming format, 11.9x faster than JSONL
+    #[cfg(feature = "ison")]
+    Isonl,
     /// TOON (Token-Oriented Object Notation)
     #[cfg(feature = "toon")]
     Toon,
@@ -76,12 +72,12 @@ pub enum Format {
     Auto,
 }
 
-#[allow(dead_code)]
+#[allow(dead_code)] // Methods used conditionally based on enabled format features
 impl Format {
     /// Convert to [`FormatKind`] (for library interop)
     const fn to_format_kind(self) -> Option<FormatKind> {
         match self {
-            Self::Json => Some(FormatKind::Json),
+            Self::Json | Self::Jsonl => Some(FormatKind::Json),
             #[cfg(feature = "yaml")]
             Self::Yaml => Some(FormatKind::Yaml),
             #[cfg(feature = "toml")]
@@ -89,10 +85,24 @@ impl Format {
             #[cfg(feature = "csv")]
             Self::Csv => Some(FormatKind::Csv),
             #[cfg(feature = "ison")]
-            Self::Ison => Some(FormatKind::Ison),
+            Self::Ison | Self::Isonl => Some(FormatKind::Ison),
             #[cfg(feature = "toon")]
             Self::Toon => Some(FormatKind::Toon),
             Self::Gron | Self::Auto => None,
+        }
+    }
+
+    /// Check if this is a streaming (line-delimited) format
+    const fn is_streaming(self) -> bool {
+        matches!(self, Self::Jsonl) || {
+            #[cfg(feature = "ison")]
+            {
+                matches!(self, Self::Isonl)
+            }
+            #[cfg(not(feature = "ison"))]
+            {
+                false
+            }
         }
     }
 
@@ -115,7 +125,7 @@ impl Format {
 #[command(long_about = "fionn - Multi-format data processing tool\n\n\
     Supports: JSON, YAML, TOML, CSV, ISON, TOON\n\
     Operations: gron, diff, patch, merge, query, format, validate, convert")]
-#[allow(clippy::struct_excessive_bools)]
+#[allow(clippy::struct_excessive_bools)] // CLI args naturally have many boolean flags
 struct Args {
     /// Input format (default: auto-detect)
     #[arg(short = 'f', long = "from", global = true, value_name = "FORMAT")]
@@ -283,7 +293,7 @@ enum Commands {
         strict: bool,
     },
 
-    /// Process streaming data (JSONL, multi-doc YAML, CSV rows)
+    /// Process streaming data (JSONL, ISONL, multi-doc YAML, CSV rows)
     Stream {
         /// Input file
         file: Option<PathBuf>,
@@ -299,6 +309,18 @@ enum Commands {
         /// Skip first N records
         #[arg(long = "skip")]
         skip: Option<usize>,
+
+        /// Fields to extract (comma-separated for schema filtering)
+        #[arg(long = "fields", short = 'F')]
+        fields: Option<String>,
+
+        /// DSON operations (JSON array): '[{"FieldAdd":{"path":"x","value":1}}]'
+        #[arg(long = "ops")]
+        ops: Option<String>,
+
+        /// Use SIMD acceleration (default: auto-detect)
+        #[arg(long = "simd", default_value = "true")]
+        use_simd: bool,
     },
 
     /// Infer schema from data
@@ -345,7 +367,8 @@ enum Commands {
 fn detect_format_from_extension(path: &Path) -> Option<Format> {
     let ext = path.extension()?.to_str()?.to_lowercase();
     match ext.as_str() {
-        "json" | "jsonl" | "geojson" | "ndjson" => Some(Format::Json),
+        "json" | "geojson" => Some(Format::Json),
+        "jsonl" | "ndjson" => Some(Format::Jsonl),
         #[cfg(feature = "yaml")]
         "yaml" | "yml" => Some(Format::Yaml),
         #[cfg(feature = "toml")]
@@ -354,6 +377,8 @@ fn detect_format_from_extension(path: &Path) -> Option<Format> {
         "csv" | "tsv" => Some(Format::Csv),
         #[cfg(feature = "ison")]
         "ison" => Some(Format::Ison),
+        #[cfg(feature = "ison")]
+        "isonl" => Some(Format::Isonl),
         #[cfg(feature = "toon")]
         "toon" => Some(Format::Toon),
         "gron" => Some(Format::Gron),
@@ -376,7 +401,7 @@ fn detect_format_from_content(content: &[u8]) -> Format {
         FormatKind::Ison => Format::Ison,
         #[cfg(feature = "toon")]
         FormatKind::Toon => Format::Toon,
-        #[allow(unreachable_patterns)]
+        #[allow(unreachable_patterns)] // Matches feature-gated variants
         _ => Format::Json,
     }
 }
@@ -423,7 +448,7 @@ fn resolve_output_format(explicit: Option<Format>, input_format: Format) -> Form
 /// Parse content to [`serde_json::Value`] based on format
 fn parse_to_value(content: &str, format: Format) -> Result<Value, Box<dyn std::error::Error>> {
     match format {
-        Format::Json | Format::Auto => Ok(serde_json::from_str(content)?),
+        Format::Json | Format::Jsonl | Format::Auto => Ok(serde_json::from_str(content)?),
         #[cfg(feature = "yaml")]
         Format::Yaml => Ok(serde_yaml::from_str(content)?),
         #[cfg(feature = "toml")]
@@ -457,8 +482,8 @@ fn parse_to_value(content: &str, format: Format) -> Result<Value, Box<dyn std::e
             Ok(value)
         }
         #[cfg(feature = "ison")]
-        Format::Ison => {
-            // ISON parsing via transform - uses real ISON parser and JSON emitter
+        Format::Ison | Format::Isonl => {
+            // ISON/ISONL parsing via transform - uses real ISON parser and JSON emitter
             let opts = TransformOptions::new();
             let (json_bytes, _metrics) = transform(
                 content.as_bytes(),
@@ -486,7 +511,7 @@ fn parse_to_value(content: &str, format: Format) -> Result<Value, Box<dyn std::e
                 .map_err(|e| format!("TOON output encoding error: {e}"))?;
             Ok(serde_json::from_str(&json_str)?)
         }
-        #[allow(unreachable_patterns)]
+        #[allow(unreachable_patterns)] // Matches feature-gated variants
         _ => Err("Unsupported input format".into()),
     }
 }
@@ -577,7 +602,7 @@ fn value_to_string(
             let (output, _metrics) =
                 transform(&json_bytes, FormatKind::Json, FormatKind::Ison, &opts)
                     .map_err(|e| format!("ISON transform error: {e}"))?;
-            String::from_utf8(output).map_err(|e| e.into())
+            String::from_utf8(output).map_err(Into::into)
         }
         #[cfg(feature = "toon")]
         Format::Toon => {
@@ -587,9 +612,9 @@ fn value_to_string(
             let (output, _metrics) =
                 transform(&json_bytes, FormatKind::Json, FormatKind::Toon, &opts)
                     .map_err(|e| format!("TOON transform error: {e}"))?;
-            String::from_utf8(output).map_err(|e| e.into())
+            String::from_utf8(output).map_err(Into::into)
         }
-        #[allow(unreachable_patterns)]
+        #[allow(unreachable_patterns)] // Matches feature-gated variants
         _ => Err("Unsupported output format".into()),
     }
 }
@@ -702,34 +727,20 @@ fn handle_gron(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     // For other formats, parse to value first then use value-based gron
     let output = if input_format == Format::Json || input_format == Format::Auto {
         // Try tape-based gron first (fastest path)
-        match DsonTape::parse(&content) {
-            Ok(tape) => {
-                if let Some(query_str) = query {
-                    // For query mode, use value-based path
-                    let json_str = serde_json::to_string(&tape_to_value(&tape)?)?;
-                    let q = Query::parse(query_str)?;
-                    let query_opts = GronQueryOptions {
-                        gron: opts.clone(),
-                        max_matches: 0,
-                        include_containers: false,
-                    };
-                    gron_query(&json_str, &q, &query_opts)?
-                } else {
-                    // Use tape-based gron for maximum performance
-                    let mut result = gron_from_tape(&tape, &opts)?;
-                    if *sort {
-                        let mut lines: Vec<&str> = result.lines().collect();
-                        lines.sort_unstable();
-                        result = lines.join("\n");
-                    }
-                    result
-                }
-            }
-            Err(_) => {
-                // Fall back to value-based gron
-                let value = parse_to_value(&content, input_format)?;
-                let json_str = serde_json::to_string(&value)?;
-                let mut result = gron(&json_str, &opts)?;
+        if let Ok(tape) = DsonTape::parse(&content) {
+            if let Some(query_str) = query {
+                // For query mode, use value-based path
+                let json_str = serde_json::to_string(&tape_to_value(&tape)?)?;
+                let q = Query::parse(query_str)?;
+                let query_opts = GronQueryOptions {
+                    gron: opts,
+                    max_matches: 0,
+                    include_containers: false,
+                };
+                gron_query(&json_str, &q, &query_opts)?
+            } else {
+                // Use tape-based gron for maximum performance
+                let mut result = gron_from_tape(&tape, &opts)?;
                 if *sort {
                     let mut lines: Vec<&str> = result.lines().collect();
                     lines.sort_unstable();
@@ -737,6 +748,17 @@ fn handle_gron(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
                 }
                 result
             }
+        } else {
+            // Fall back to value-based gron
+            let value = parse_to_value(&content, input_format)?;
+            let json_str = serde_json::to_string(&value)?;
+            let mut result = gron(&json_str, &opts)?;
+            if *sort {
+                let mut lines: Vec<&str> = result.lines().collect();
+                lines.sort_unstable();
+                result = lines.join("\n");
+            }
+            result
         }
     } else {
         // Non-JSON input: parse to value first
@@ -998,7 +1020,7 @@ fn handle_query(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let value = parse_to_value(&content, input_format)?;
 
     // Execute query and collect matching values
-    let matches = execute_query(&value, query)?;
+    let matches = execute_query(&value, query);
 
     // Apply --first flag
     let matches = if *first && !matches.is_empty() {
@@ -1036,24 +1058,24 @@ fn handle_query(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 /// Execute a JSONPath-like query and return matching values
-fn execute_query(value: &Value, query: &str) -> Result<Vec<Value>, Box<dyn std::error::Error>> {
+fn execute_query(value: &Value, query: &str) -> Vec<Value> {
     let mut results = Vec::new();
     let query = query.trim();
 
     // Handle root query
     if query == "." || query.is_empty() {
-        return Ok(vec![value.clone()]);
+        return vec![value.clone()];
     }
 
     // Parse and execute query segments
-    let segments = parse_query_path(query)?;
+    let segments = parse_query_path(query);
     collect_query_matches(value, &segments, 0, &mut results);
 
-    Ok(results)
+    results
 }
 
 /// Parse query path into segments
-fn parse_query_path(query: &str) -> Result<Vec<QuerySegmentParsed>, Box<dyn std::error::Error>> {
+fn parse_query_path(query: &str) -> Vec<QuerySegmentParsed> {
     let mut segments = Vec::new();
     let mut query = query.trim_start_matches('$');
 
@@ -1061,9 +1083,7 @@ fn parse_query_path(query: &str) -> Result<Vec<QuerySegmentParsed>, Box<dyn std:
     if query.starts_with("..") {
         query = &query[2..];
         // Collect field name after ..
-        let field_end = query
-            .find(|c: char| c == '.' || c == '[')
-            .unwrap_or(query.len());
+        let field_end = query.find(['.', '[']).unwrap_or(query.len());
         let field = &query[..field_end];
         if !field.is_empty() {
             segments.push(QuerySegmentParsed::RecursiveField(field.to_string()));
@@ -1074,7 +1094,7 @@ fn parse_query_path(query: &str) -> Result<Vec<QuerySegmentParsed>, Box<dyn std:
     }
 
     if query.is_empty() {
-        return Ok(segments);
+        return segments;
     }
 
     let mut chars = query.chars().peekable();
@@ -1144,7 +1164,7 @@ fn parse_query_path(query: &str) -> Result<Vec<QuerySegmentParsed>, Box<dyn std:
         segments.push(QuerySegmentParsed::Field(current));
     }
 
-    Ok(segments)
+    segments
 }
 
 #[derive(Debug, Clone)]
@@ -1169,17 +1189,17 @@ fn collect_query_matches(
 
     match &segments[segment_idx] {
         QuerySegmentParsed::Field(name) => {
-            if let Value::Object(obj) = value {
-                if let Some(v) = obj.get(name) {
-                    collect_query_matches(v, segments, segment_idx + 1, results);
-                }
+            if let Value::Object(obj) = value
+                && let Some(v) = obj.get(name)
+            {
+                collect_query_matches(v, segments, segment_idx + 1, results);
             }
         }
         QuerySegmentParsed::Index(idx) => {
-            if let Value::Array(arr) = value {
-                if let Some(v) = arr.get(*idx) {
-                    collect_query_matches(v, segments, segment_idx + 1, results);
-                }
+            if let Value::Array(arr) = value
+                && let Some(v) = arr.get(*idx)
+            {
+                collect_query_matches(v, segments, segment_idx + 1, results);
             }
         }
         QuerySegmentParsed::Wildcard => match value {
@@ -1308,6 +1328,7 @@ fn handle_validate(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     if !args.quiet {
         let format_name = match input_format {
             Format::Json => "JSON",
+            Format::Jsonl => "JSONL",
             #[cfg(feature = "yaml")]
             Format::Yaml => "YAML",
             #[cfg(feature = "toml")]
@@ -1316,6 +1337,8 @@ fn handle_validate(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
             Format::Csv => "CSV",
             #[cfg(feature = "ison")]
             Format::Ison => "ISON",
+            #[cfg(feature = "ison")]
+            Format::Isonl => "ISONL",
             #[cfg(feature = "toon")]
             Format::Toon => "TOON",
             Format::Gron => "Gron",
@@ -1394,13 +1417,13 @@ fn validate_strict(value: &Value, path: &str, warnings: &mut Vec<String>) {
         }
         Value::Number(n) => {
             // Check for NaN-like or problematic numbers
-            if let Some(f) = n.as_f64() {
-                if f.is_infinite() {
-                    warnings.push(format!(
-                        "Infinite number at {}",
-                        if path.is_empty() { "root" } else { path }
-                    ));
-                }
+            if let Some(f) = n.as_f64()
+                && f.is_infinite()
+            {
+                warnings.push(format!(
+                    "Infinite number at {}",
+                    if path.is_empty() { "root" } else { path }
+                ));
             }
         }
         _ => {}
@@ -1425,6 +1448,9 @@ fn handle_stream(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         filter,
         limit,
         skip,
+        fields,
+        ops,
+        use_simd,
     } = &args.command
     else {
         unreachable!()
@@ -1433,10 +1459,65 @@ fn handle_stream(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let content = read_input(file.as_ref())?;
     let input_format = resolve_input_format(args.from, file.as_deref(), content.as_bytes());
 
-    // Process as JSONL (newline-delimited)
+    // Check if we should use SIMD-accelerated ISONL processing
+    #[cfg(feature = "ison")]
+    if *use_simd && matches!(input_format, Format::Isonl) {
+        return handle_stream_isonl_simd(
+            args,
+            content.as_bytes(),
+            filter.as_deref(),
+            *limit,
+            skip.unwrap_or(0),
+            fields.as_deref(),
+            ops.as_deref(),
+        );
+    }
+
+    // Suppress warning when ison feature is not enabled
+    let _ = use_simd;
+
+    // Fall back to standard line-by-line processing
+    handle_stream_generic(
+        args,
+        &content,
+        input_format,
+        filter,
+        limit,
+        skip,
+        fields,
+        ops,
+    )
+}
+
+/// Generic streaming handler for JSONL and other line-delimited formats
+#[allow(clippy::too_many_arguments)] // Stream handler needs multiple configuration parameters
+#[allow(clippy::ref_option)] // Pattern matches CLI argument types
+fn handle_stream_generic(
+    args: &Args,
+    content: &str,
+    input_format: Format,
+    filter: &Option<String>,
+    limit: &Option<usize>,
+    skip: &Option<usize>,
+    fields: &Option<String>,
+    ops: &Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut results = Vec::new();
     let mut count = 0;
     let skip_count = skip.unwrap_or(0);
+
+    // Parse field list for selective extraction
+    let field_list: Vec<&str> = fields
+        .as_ref()
+        .map(|f| f.split(',').map(str::trim).collect())
+        .unwrap_or_default();
+
+    // Parse DSON operations if provided
+    let dson_ops: Vec<serde_json::Value> = ops
+        .as_ref()
+        .map(|o| serde_json::from_str(o))
+        .transpose()?
+        .unwrap_or_default();
 
     for line in content.lines() {
         if line.trim().is_empty() {
@@ -1450,23 +1531,33 @@ fn handle_stream(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         }
 
         // Parse line
-        let value = parse_to_value(line, input_format)?;
+        let mut value = parse_to_value(line, input_format)?;
+
+        // Apply field filtering if specified
+        if !field_list.is_empty() {
+            value = extract_fields(&value, &field_list);
+        }
+
+        // Apply DSON operations if specified
+        if !dson_ops.is_empty() {
+            value = apply_dson_ops(value, &dson_ops)?;
+        }
 
         // Apply filter if specified
-        if let Some(filter_expr) = filter {
-            if !evaluate_filter(&value, filter_expr)? {
-                count += 1;
-                continue; // Skip non-matching records
-            }
+        if let Some(filter_expr) = filter
+            && !evaluate_filter(&value, filter_expr)
+        {
+            count += 1;
+            continue; // Skip non-matching records
         }
 
         results.push(value);
 
         // Check limit
-        if let Some(lim) = limit {
-            if results.len() >= *lim {
-                break;
-            }
+        if let Some(lim) = limit
+            && results.len() >= *lim
+        {
+            break;
         }
 
         count += 1;
@@ -1485,9 +1576,169 @@ fn handle_stream(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// SIMD-accelerated ISONL streaming handler
+#[cfg(feature = "ison")]
+fn handle_stream_isonl_simd(
+    args: &Args,
+    data: &[u8],
+    filter: Option<&str>,
+    limit: Option<usize>,
+    skip: usize,
+    fields: Option<&str>,
+    ops: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use fionn_stream::skiptape::isonl::{IsonlBatchResult, SimdIsonlBatchProcessor};
+
+    let mut processor = SimdIsonlBatchProcessor::new();
+
+    // Process entire batch with SIMD acceleration
+    let batch_result: IsonlBatchResult = processor
+        .process_batch_unfiltered(data)
+        .map_err(|e| format!("ISONL processing error: {e}"))?;
+
+    // Parse field list for selective extraction
+    let field_list: Vec<&str> = fields
+        .map(|f| f.split(',').map(str::trim).collect())
+        .unwrap_or_default();
+
+    // Parse DSON operations if provided
+    let dson_ops: Vec<serde_json::Value> = ops
+        .map(serde_json::from_str)
+        .transpose()?
+        .unwrap_or_default();
+
+    let mut count = 0;
+    let mut output_count = 0;
+    let output_format = resolve_output_format(args.to, Format::Json);
+
+    for doc in &batch_result.documents {
+        // Skip initial records if requested
+        if count < skip {
+            count += 1;
+            continue;
+        }
+
+        // Parse the JSON document
+        let mut value: Value = serde_json::from_str(doc)?;
+
+        // Apply field filtering if specified
+        if !field_list.is_empty() {
+            value = extract_fields(&value, &field_list);
+        }
+
+        // Apply DSON operations if specified
+        if !dson_ops.is_empty() {
+            value = apply_dson_ops(value, &dson_ops)?;
+        }
+
+        // Apply filter if specified
+        if let Some(filter_expr) = filter
+            && !evaluate_filter(&value, filter_expr)
+        {
+            count += 1;
+            continue;
+        }
+
+        // Output the result
+        let output = value_to_string(&value, output_format, false, true, 0)?;
+        println!("{output}");
+        output_count += 1;
+
+        // Check limit
+        if let Some(lim) = limit
+            && output_count >= lim
+        {
+            break;
+        }
+
+        count += 1;
+    }
+
+    if !args.quiet {
+        eprintln!(
+            "Processed {} records ({} successful, {} errors) via SIMD",
+            batch_result.statistics.total_lines,
+            batch_result.statistics.successful_lines,
+            batch_result.statistics.failed_lines
+        );
+    }
+    Ok(())
+}
+
+/// Extract specific fields from a JSON value
+fn extract_fields(value: &Value, fields: &[&str]) -> Value {
+    if let Value::Object(obj) = value {
+        let mut result = serde_json::Map::new();
+        for field in fields {
+            // Handle nested paths (e.g., "user.name")
+            if field.contains('.') {
+                let parts: Vec<&str> = field.splitn(2, '.').collect();
+                if let Some(Value::Object(nested_obj)) = obj.get(parts[0])
+                    && let Some(v) = nested_obj.get(parts[1])
+                {
+                    result.insert((*field).to_string(), v.clone());
+                }
+            } else if let Some(v) = obj.get(*field) {
+                result.insert((*field).to_string(), v.clone());
+            }
+        }
+        Value::Object(result)
+    } else {
+        value.clone()
+    }
+}
+
+/// Apply DSON operations to a JSON value
+fn apply_dson_ops(
+    mut value: Value,
+    ops: &[serde_json::Value],
+) -> Result<Value, Box<dyn std::error::Error>> {
+    for op in ops {
+        if let Some(field_add) = op.get("FieldAdd") {
+            let path = field_add
+                .get("path")
+                .and_then(|v| v.as_str())
+                .ok_or("FieldAdd requires 'path'")?;
+            let new_value = field_add
+                .get("value")
+                .ok_or("FieldAdd requires 'value'")?
+                .clone();
+
+            if let Value::Object(ref mut obj) = value {
+                obj.insert(path.to_string(), new_value);
+            }
+        } else if let Some(field_modify) = op.get("FieldModify") {
+            let path = field_modify
+                .get("path")
+                .and_then(|v| v.as_str())
+                .ok_or("FieldModify requires 'path'")?;
+            let new_value = field_modify
+                .get("value")
+                .ok_or("FieldModify requires 'value'")?
+                .clone();
+
+            if let Value::Object(ref mut obj) = value
+                && obj.contains_key(path)
+            {
+                obj.insert(path.to_string(), new_value);
+            }
+        } else if let Some(field_delete) = op.get("FieldDelete") {
+            let path = field_delete
+                .get("path")
+                .and_then(|v| v.as_str())
+                .ok_or("FieldDelete requires 'path'")?;
+
+            if let Value::Object(ref mut obj) = value {
+                obj.remove(path);
+            }
+        }
+    }
+    Ok(value)
+}
+
 /// Evaluate a filter expression against a value
 /// Supports: path queries (existence check), comparisons (>, <, >=, <=, ==, !=)
-fn evaluate_filter(value: &Value, filter: &str) -> Result<bool, Box<dyn std::error::Error>> {
+fn evaluate_filter(value: &Value, filter: &str) -> bool {
     let filter = filter.trim();
 
     // Try to parse as comparison expression
@@ -1497,9 +1748,9 @@ fn evaluate_filter(value: &Value, filter: &str) -> Result<bool, Box<dyn std::err
             let rhs = filter[pos + op.len()..].trim();
 
             // Get value at path
-            let matches = execute_query(value, path)?;
+            let matches = execute_query(value, path);
             if matches.is_empty() {
-                return Ok(false);
+                return false;
             }
 
             let lhs = &matches[0];
@@ -1514,22 +1765,20 @@ fn evaluate_filter(value: &Value, filter: &str) -> Result<bool, Box<dyn std::err
             } else if let Ok(n) = rhs.parse::<i64>() {
                 Value::Number(n.into())
             } else if let Ok(n) = rhs.parse::<f64>() {
-                serde_json::Number::from_f64(n)
-                    .map(Value::Number)
-                    .unwrap_or(Value::Null)
+                serde_json::Number::from_f64(n).map_or(Value::Null, Value::Number)
             } else {
                 // String (remove quotes if present)
                 let s = rhs.trim_matches('"').trim_matches('\'');
                 Value::String(s.to_string())
             };
 
-            return Ok(compare_values(lhs, &rhs_value, op));
+            return compare_values(lhs, &rhs_value, op);
         }
     }
 
     // No comparison operator - treat as existence check
-    let matches = execute_query(value, filter)?;
-    Ok(!matches.is_empty())
+    let matches = execute_query(value, filter);
+    !matches.is_empty()
 }
 
 /// Compare two JSON values with an operator
@@ -1548,31 +1797,30 @@ fn compare_values(lhs: &Value, rhs: &Value, op: &str) -> bool {
                 _ => None,
             };
 
-            match (lhs_num, rhs_num) {
-                (Some(l), Some(r)) => match op {
+            if let (Some(l), Some(r)) = (lhs_num, rhs_num) {
+                match op {
                     ">" => l > r,
                     ">=" => l >= r,
                     "<" => l < r,
                     "<=" => l <= r,
                     _ => false,
-                },
-                _ => {
-                    // String comparison fallback
-                    let lhs_str = match lhs {
-                        Value::String(s) => s.as_str(),
-                        _ => return false,
-                    };
-                    let rhs_str = match rhs {
-                        Value::String(s) => s.as_str(),
-                        _ => return false,
-                    };
-                    match op {
-                        ">" => lhs_str > rhs_str,
-                        ">=" => lhs_str >= rhs_str,
-                        "<" => lhs_str < rhs_str,
-                        "<=" => lhs_str <= rhs_str,
-                        _ => false,
-                    }
+                }
+            } else {
+                // String comparison fallback
+                let lhs_str = match lhs {
+                    Value::String(s) => s.as_str(),
+                    _ => return false,
+                };
+                let rhs_str = match rhs {
+                    Value::String(s) => s.as_str(),
+                    _ => return false,
+                };
+                match op {
+                    ">" => lhs_str > rhs_str,
+                    ">=" => lhs_str >= rhs_str,
+                    "<" => lhs_str < rhs_str,
+                    "<=" => lhs_str <= rhs_str,
+                    _ => false,
                 }
             }
         }
@@ -1605,7 +1853,7 @@ fn handle_schema(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[allow(clippy::too_many_lines)]
+#[allow(clippy::too_many_lines)] // Ops handler dispatches many operation types inline
 fn handle_ops(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let Commands::Ops { op, file, path } = &args.command else {
         unreachable!()
@@ -1817,7 +2065,7 @@ fn sort_arrays_recursive(value: &Value) -> Value {
             // First, recursively sort nested structures
             let mut sorted: Vec<Value> = arr.iter().map(sort_arrays_recursive).collect();
             // Then sort the array elements themselves by their string representation
-            sorted.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
+            sorted.sort_by_key(ToString::to_string);
             Value::Array(sorted)
         }
         other => other.clone(),
@@ -1830,11 +2078,12 @@ fn deep_merge_with_array_strategy(base: &Value, overlay: &Value, array_strategy:
         (Value::Object(base_obj), Value::Object(overlay_obj)) => {
             let mut result = base_obj.clone();
             for (key, overlay_val) in overlay_obj {
-                let merged = if let Some(base_val) = result.get(key) {
-                    deep_merge_with_array_strategy(base_val, overlay_val, array_strategy)
-                } else {
-                    overlay_val.clone()
-                };
+                let merged = result.get(key).map_or_else(
+                    || overlay_val.clone(),
+                    |base_val| {
+                        deep_merge_with_array_strategy(base_val, overlay_val, array_strategy)
+                    },
+                );
                 result.insert(key.clone(), merged);
             }
             Value::Object(result)

@@ -38,7 +38,7 @@ pub use toml::TomlParser;
 pub use csv::CsvParser;
 
 #[cfg(feature = "ison")]
-pub use ison::IsonParser;
+pub use ison::{IsonParser, IsonlParsedLine};
 
 #[cfg(feature = "toon")]
 pub use toon::ToonParser;
@@ -97,7 +97,7 @@ impl StructuralPositions {
 
     /// Check if any positions were found
     #[must_use]
-    #[allow(clippy::missing_const_for_fn)]
+    #[allow(clippy::missing_const_for_fn)] // Vec::is_empty() is not const
     pub fn is_empty(&self) -> bool {
         self.delimiters.is_empty()
             && self.string_boundaries.is_empty()

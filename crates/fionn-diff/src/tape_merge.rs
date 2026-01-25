@@ -410,6 +410,7 @@ fn tape_value_to_json(val: TapeValue<'_>) -> Value {
         TapeValue::RawNumber(s) => {
             // Try parsing as i64 first, then f64, falling back to string
             #[allow(clippy::option_if_let_else)]
+            // Chained if-let-else is clearer for fallback parsing
             if let Ok(n) = s.parse::<i64>() {
                 Value::Number(n.into())
             } else if let Ok(f) = s.parse::<f64>() {

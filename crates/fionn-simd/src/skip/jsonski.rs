@@ -123,8 +123,7 @@ fn skip_container_loop(
         if *lbrace_num < *rbrace_num {
             debug_assert_eq!(*rbrace_num, *lbrace_num + 1);
             let cnt = rbrace.trailing_zeros() + 1;
-            // cnt is always <= 64, safe to truncate
-            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_possible_truncation)] // cnt always <= 64 (chunk size)
             return NonZeroU8::new(cnt as u8);
         }
 

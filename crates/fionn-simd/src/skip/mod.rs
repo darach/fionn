@@ -108,7 +108,7 @@ impl SkipStrategy {
     #[must_use]
     pub fn all_strategies() -> Vec<Self> {
         // Mutable on x86/x86_64 where Avx2 may be pushed
-        #[allow(unused_mut)]
+        #[allow(unused_mut)] // Mutated conditionally on x86 targets
         let mut strategies = vec![Self::Scalar, Self::Langdale, Self::JsonSki];
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         {

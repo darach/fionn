@@ -1,12 +1,23 @@
+---
+title: "Gron Beyond Trees: Path-Value Decomposition for Non-Hierarchical Data Formats"
+author: "Darach Ennis"
+date: "January 2026"
+abstract: |
+  \begin{flushright}
+  \textit{"They could change into any shape they pleased."}\\[0.5em]
+  — Lady Augusta Gregory, \textit{Gods and Fighting Men}
+  \end{flushright}
+
+  \vspace{1em}
+
+  Gron transforms hierarchical JSON into grep-friendly path-value pairs, enabling structural queries and diffs via standard Unix tools. We extend this transformation to non-hierarchical formats: CSV (tabular), ISON (reference-based), and TOON (indentation-based with key folding). Our TapeSource abstraction enables format-agnostic gron with O(n) complexity and consistent performance across formats. Evaluation shows 350-500 MiB/s throughput with 80-100% roundtrip fidelity depending on format semantics.
+keywords: [gron, path-value decomposition, multi-format data, structural transformation]
+geometry: margin=1in
+fontsize: 11pt
+numbersections: true
+---
+
 # Gron Beyond Trees: Path-Value Decomposition for Non-Hierarchical Data Formats
-
-*Darach Ennis*
-
-## Abstract
-
-Gron transforms hierarchical JSON into grep-friendly path-value pairs, enabling structural queries and diffs via standard Unix tools. We extend this transformation to non-hierarchical formats: CSV (tabular), ISON (reference-based), and TOON (indentation-based with key folding). Our TapeSource abstraction enables format-agnostic gron with O(n) complexity and consistent performance across formats. Evaluation shows 350-500 MiB/s throughput with 80-100% roundtrip fidelity depending on format semantics.
-
-**Keywords**: gron, path-value decomposition, multi-format data, structural transformation
 
 ---
 

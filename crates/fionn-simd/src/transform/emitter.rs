@@ -40,7 +40,7 @@ impl<'a> JsonEmitter<'a> {
         Self { options }
     }
 
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self)] // Method signature for API consistency; may use self.options in future
     fn emit_value(&self, value: &TapeValue<'_>, output: &mut Vec<u8>) {
         match value {
             TapeValue::Null => output.extend_from_slice(b"null"),
@@ -83,7 +83,7 @@ impl Emitter for JsonEmitter<'_> {
         Ok(output)
     }
 
-    #[allow(clippy::too_many_lines)]
+    #[allow(clippy::too_many_lines)] // Format emission handles many node types inline for performance
     fn emit_into(&self, tape: &UnifiedTape<'_>, output: &mut Vec<u8>) -> TransformResult<()> {
         let mut depth = 0usize;
         let mut first_in_container: Vec<bool> = vec![true];
@@ -249,7 +249,7 @@ impl<'a> YamlEmitter<'a> {
         Self { options }
     }
 
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self)] // Method signature for API consistency; may use self.options in future
     fn emit_value(&self, value: &TapeValue<'_>, output: &mut Vec<u8>) {
         match value {
             TapeValue::Null => output.extend_from_slice(b"null"),
@@ -383,7 +383,7 @@ impl Emitter for YamlEmitter<'_> {
 /// TOML format emitter
 #[cfg(feature = "toml")]
 pub struct TomlEmitter<'a> {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Reserved for future format-specific options
     options: &'a TransformOptions,
 }
 
@@ -395,7 +395,7 @@ impl<'a> TomlEmitter<'a> {
         Self { options }
     }
 
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self)] // Method signature for API consistency; may use self.options in future
     fn emit_value(&self, value: &TapeValue<'_>, output: &mut Vec<u8>) {
         match value {
             TapeValue::Null => output.extend_from_slice(b"\"\""), // TOML has no null
@@ -503,7 +503,7 @@ impl Emitter for TomlEmitter<'_> {
 /// CSV format emitter
 #[cfg(feature = "csv")]
 pub struct CsvEmitter<'a> {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Reserved for future format-specific options
     options: &'a TransformOptions,
 }
 
@@ -515,7 +515,7 @@ impl<'a> CsvEmitter<'a> {
         Self { options }
     }
 
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self)] // Method signature for API consistency; may use self.options in future
     fn emit_value(&self, value: &TapeValue<'_>, output: &mut Vec<u8>) {
         match value {
             TapeValue::Null => {} // Empty field
@@ -590,7 +590,7 @@ impl Emitter for CsvEmitter<'_> {
 /// ISON format emitter
 #[cfg(feature = "ison")]
 pub struct IsonEmitter<'a> {
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Reserved for future format-specific options
     options: &'a TransformOptions,
 }
 
@@ -602,7 +602,7 @@ impl<'a> IsonEmitter<'a> {
         Self { options }
     }
 
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self)] // Method signature for API consistency; may use self.options in future
     fn emit_value(&self, value: &TapeValue<'_>, output: &mut Vec<u8>) {
         match value {
             TapeValue::Null => output.extend_from_slice(b"null"),
@@ -636,7 +636,7 @@ impl Emitter for IsonEmitter<'_> {
         Ok(output)
     }
 
-    #[allow(clippy::match_same_arms)]
+    #[allow(clippy::match_same_arms)] // Empty arms intentionally document skipped node types
     fn emit_into(&self, tape: &UnifiedTape<'_>, output: &mut Vec<u8>) -> TransformResult<()> {
         let mut path: Vec<String> = Vec::new();
         let mut in_array = false;
@@ -741,7 +741,7 @@ impl<'a> ToonEmitter<'a> {
         Self { options }
     }
 
-    #[allow(clippy::unused_self)]
+    #[allow(clippy::unused_self)] // Method signature for API consistency; may use self.options in future
     fn emit_value(&self, value: &TapeValue<'_>, output: &mut Vec<u8>) {
         match value {
             TapeValue::Null => output.extend_from_slice(b"null"),

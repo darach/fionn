@@ -1,0 +1,138 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn-py"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Python bindings for fionn - drop-in orjson replacement + extended features"
+readme = "README.md"
+keywords = ["json", "python", "simd", "orjson", "pyo3"]
+categories = ["parsing", "encoding", "api-bindings"]
+publish = false  # Published to PyPI via maturin, not crates.io
+
+[lib]
+name = "fionn"
+crate-type = ["cdylib"]
+doc = false  # Avoid doc collision with fionn crate - Python bindings use Python docs
+
+[features]
+default = []
+
+# NumPy support (optional, adds numpy dependency)
+numpy = ["dep:numpy"]
+
+# Format support (passthrough to fionn)
+yaml = ["fionn/yaml"]
+toml = ["fionn/toml"]
+csv = ["fionn/csv"]
+ison = ["fionn/ison"]
+toon = ["fionn/toon"]
+all-formats = ["yaml", "toml", "csv", "ison", "toon"]
+
+# Full feature set
+full = ["numpy", "all-formats"]
+
+[dependencies]
+# PyO3 for Python bindings
+# Using abi3-py39 for broad compatibility (Python 3.9+)
+pyo3 = { version = "0.27", features = ["extension-module", "abi3-py39", "anyhow"] }
+
+# Internal fionn crates (all existing, unchanged)
+fionn = { path = "../fionn" }
+fionn-core = { path = "../fionn-core" }
+fionn-tape = { path = "../fionn-tape" }
+fionn-simd = { path = "../fionn-simd" }
+fionn-ops = { path = "../fionn-ops" }
+fionn-gron = { path = "../fionn-gron" }
+fionn-diff = { path = "../fionn-diff" }
+fionn-crdt = { path = "../fionn-crdt" }
+fionn-stream = { path = "../fionn-stream" }
+fionn-pool = { path = "../fionn-pool" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+toml = "0.8"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Fast hashing for dict operations
+ahash = "0.8"
+
+# SIMD JSON parsing (for orjson-level performance)
+simd-json = "0.14"
+sonic-rs = "0.3"
+
+# Fast number formatting (for direct serialization)
+itoa = "1.0"
+ryu = "1.0"
+
+# Byte scanning
+memchr = "2.7"
+
+# Optional NumPy support
+numpy = { version = "0.27", optional = true }
+
+[dev-dependencies]
+# For Rust-side tests
+criterion = "0.5"
+
+[build-dependencies]
+pyo3-build-config = "0.27"
+
+# Inherit base lints from workspace, then override for PyO3 bindings
+[lints.rust]
+rust_2018_idioms = { level = "deny", priority = -1 }
+missing_docs = "warn"
+# Allow dead code in binding modules (may be used by features or future work)
+dead_code = "allow"
+
+[lints.clippy]
+# Keep workspace pedantic/nursery/cargo lints
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+cargo = { level = "deny", priority = -1 }
+cargo_common_metadata = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+cast_sign_loss = "allow"
+multiple_crate_versions = "allow"
+
+# PyO3 binding code has different patterns than library code
+# PyO3 methods often have unused self for API compatibility
+unused_self = "allow"
+# PyO3 bindings often take values by value for Python interop
+needless_pass_by_value = "allow"
+# Match arms may be identical for different Python type dispatch
+match_same_arms = "allow"
+# Temporary drops are managed by Python GC
+significant_drop_tightening = "allow"
+# Result wrapping is required by PyO3 for Python exception handling
+unnecessary_wraps = "allow"
+# map_or patterns are common in binding code
+option_if_let_else = "allow"
+# Option<&T> vs &Option<T> - PyO3 often requires specific patterns
+ref_option = "allow"
+# format! patterns are acceptable for error messages
+format_push_string = "allow"
+# Line count limits relaxed for binding functions
+too_many_lines = "allow"
+# Argument count relaxed for Python API compatibility
+too_many_arguments = "allow"
+# Doc link formatting
+doc_link_with_quotes = "allow"
+# Collapsible if/match patterns may be clearer separated for binding code
+collapsible_if = "allow"
+collapsible_match = "allow"
+# Additional binding-specific allows
+struct_excessive_bools = "allow"
+only_used_in_recursion = "allow"
+missing_errors_doc = "allow"
+cast_possible_truncation = "allow"
+unused_peekable = "allow"

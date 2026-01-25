@@ -12,7 +12,7 @@ use std::io::Write;
 
 /// Options for gron output.
 #[derive(Debug, Clone)]
-#[allow(clippy::struct_excessive_bools)]
+#[allow(clippy::struct_excessive_bools)] // Configuration options are independent boolean flags
 pub struct GronOptions {
     /// Root prefix for paths (default: "json")
     pub prefix: String,

@@ -1,0 +1,30 @@
+{
+  "id": "event_123",
+  "nested": {
+    "metadata": {
+      "tags": [
+        "prod",
+        "web",
+        "high-priority"
+      ],
+      "env": {
+        "region": "us-east-1",
+        "zone": "a",
+        "capacity": {
+          "cpu": 16,
+          "mem": 64
+        }
+      }
+    },
+    "metrics": [
+      {
+        "name": "latency",
+        "val": 45
+      },
+      {
+        "name": "cpu",
+        "val": 0.5
+      }
+    ]
+  }
+}

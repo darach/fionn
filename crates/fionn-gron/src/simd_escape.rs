@@ -16,7 +16,7 @@ use std::arch::aarch64::{
     uint8x16_t, vceqq_u8, vcltq_u8, vdupq_n_u8, vld1q_u8, vmaxvq_u8, vorrq_u8,
 };
 
-#[allow(unused_imports)]
+#[allow(unused_imports)] // OnceLock used conditionally per target_arch
 use std::sync::OnceLock;
 
 /// Cached SIMD feature detection.
@@ -77,7 +77,7 @@ pub fn escape_json_string_simd(s: &str, out: &mut Vec<u8>) {
     }
 
     // Fallback to scalar
-    #[allow(unreachable_code)]
+    #[allow(unreachable_code)] // Reachable only when no SIMD available (non-x86/aarch64)
     {
         escape_json_string_scalar(bytes, out);
         out.push(b'"');
@@ -100,9 +100,9 @@ unsafe fn escape_json_string_sse2(bytes: &[u8], out: &mut Vec<u8>) {
 
         // Pre-compute SIMD constants
         let control_bound = _mm_set1_epi8(0x20);
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let quote_char = _mm_set1_epi8(b'"' as i8);
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let backslash_char = _mm_set1_epi8(b'\\' as i8);
 
         while i < len {
@@ -189,9 +189,9 @@ unsafe fn escape_json_string_avx2(bytes: &[u8], out: &mut Vec<u8>) {
 
         // Pre-compute SIMD constants
         let control_bound = _mm256_set1_epi8(0x20);
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let quote_char = _mm256_set1_epi8(b'"' as i8);
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let backslash_char = _mm256_set1_epi8(b'\\' as i8);
 
         while i < len {
@@ -265,9 +265,9 @@ unsafe fn find_next_escape_avx2(
         if i + 16 <= len && has_sse2() {
             // Pre-compute SSE2 constants
             let sse_control = _mm_set1_epi8(0x20);
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let sse_quote = _mm_set1_epi8(b'"' as i8);
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let sse_backslash = _mm_set1_epi8(b'\\' as i8);
 
             return find_next_escape_sse2(bytes, i, sse_control, sse_quote, sse_backslash);

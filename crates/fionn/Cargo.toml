@@ -18,11 +18,11 @@ path = "src/lib.rs"
 
 [features]
 default = []
-yaml = ["fionn-simd/yaml", "fionn-core/yaml"]
-toml = ["fionn-simd/toml", "fionn-core/toml"]
-csv = ["fionn-simd/csv", "fionn-core/csv"]
-ison = ["fionn-simd/ison", "fionn-core/ison"]
-toon = ["fionn-simd/toon", "fionn-core/toon"]
+yaml = ["fionn-simd/yaml"]
+toml = ["fionn-simd/toml"]
+csv = ["fionn-simd/csv"]
+ison = ["fionn-simd/ison"]
+toon = ["fionn-simd/toon"]
 all-formats = ["yaml", "toml", "csv", "ison", "toon"]
 
 [dependencies]
@@ -35,12 +35,16 @@ fionn-gron = { path = "../fionn-gron", version = "0.1.0" }
 fionn-diff = { path = "../fionn-diff", version = "0.1.0" }
 fionn-crdt = { path = "../fionn-crdt", version = "0.1.0" }
 fionn-pool = { path = "../fionn-pool", version = "0.1.0" }
+serde_json = "1.0"
+memchr = "2.7"
+simd-json = "0.14"
+sonic-rs = "0.3"
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
-serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
+toml = "0.8"
 simd-json = "0.14"
 sonic-rs = "0.3"
 proptest = "1.5"
@@ -49,7 +53,6 @@ arbitrary = { version = "1.4", features = ["derive"] }
 rayon = "1.10"
 ahash = "=0.8.12"
 json-patch = "3.0"
-toml = "0.8"
 
 [lints]
 workspace = true
@@ -180,3 +183,23 @@ path = "../../benches/cross_format_ops.rs"
 name = "schema_validation"
 harness = false
 path = "../../benches/schema_validation.rs"
+
+[[bench]]
+name = "dson_matrix_bench"
+harness = false
+path = "../../benches/dson_matrix_bench.rs"
+
+[[bench]]
+name = "skip_parsing_advantage"
+harness = false
+path = "../../benches/skip_parsing_advantage.rs"
+
+[[bench]]
+name = "dimensional_analysis"
+harness = false
+path = "../../benches/dimensional_analysis.rs"
+
+# Binary for perf analysis
+[[bin]]
+name = "perf_analysis"
+path = "../../benches/perf_analysis.rs"

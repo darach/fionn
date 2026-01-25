@@ -80,6 +80,20 @@ jobs:
             echo "crashes_found=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Rename AFL files for artifact upload
+        if: always()
+        run: |
+          # AFL uses colons in filenames which are not allowed on NTFS (GitHub artifact storage)
+          # Rename files to replace colons with underscores
+          for dir in fuzz/output/${{ matrix.target }}/default/crashes fuzz/output/${{ matrix.target }}/default/queue; do
+            if [ -d "$dir" ]; then
+              find "$dir" -type f -name '*:*' | while read -r file; do
+                newname=$(echo "$file" | sed 's/:/_/g')
+                mv "$file" "$newname" 2>/dev/null || true
+              done
+            fi
+          done
+
       - name: Upload crash artifacts
         if: steps.crashes.outputs.crashes_found == 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

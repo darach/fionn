@@ -363,7 +363,7 @@ fn skip_container_loop(
         *lbrace_num = last_lbrace_num + opens_before;
 
         if *lbrace_num < *rbrace_num {
-            #[allow(clippy::cast_possible_truncation)]
+            #[allow(clippy::cast_possible_truncation)] // Position always < 64 (chunk size)
             return Some((close_pos + 1) as u8);
         }
         close_bits &= close_bits - 1;

@@ -598,7 +598,7 @@ mod tests {
         let opts = DiffOptions::default()
             .with_copies()
             .with_array_optimization();
-        #[allow(clippy::redundant_clone)]
+        #[allow(clippy::redundant_clone)] // Test verifies Clone impl correctness
         let cloned = opts.clone();
         assert_eq!(cloned.detect_copies, opts.detect_copies);
         assert_eq!(cloned.optimize_arrays, opts.optimize_arrays);

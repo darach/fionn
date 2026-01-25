@@ -190,8 +190,9 @@ fn fuzz_ison(data: &[u8]) {
     // Test reference parsing with string slices
     if let Ok(s) = std::str::from_utf8(data) {
         // Test reference parsing at various offsets
+        // Use is_char_boundary to avoid panics on multi-byte UTF-8
         for i in 0..s.len().min(50) {
-            if i < s.len() {
+            if s.is_char_boundary(i) {
                 let _ = IsonParser::parse_reference(&s[i..]);
             }
         }

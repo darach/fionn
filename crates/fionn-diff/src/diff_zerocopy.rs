@@ -297,7 +297,7 @@ pub fn json_diff_zerocopy<'a>(source: &Value, target: &'a Value) -> JsonPatchRef
 }
 
 /// Recursively diff two values with zero-copy output.
-#[allow(clippy::similar_names)]
+#[allow(clippy::similar_names)] // src_obj/tgt_obj naming follows source/target convention
 fn diff_values_zerocopy<'a>(
     source: &Value,
     target: &'a Value,

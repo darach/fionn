@@ -31,8 +31,17 @@ path = "../crates/fionn-gron"
 path = "../crates/fionn-simd"
 features = ["all-formats"]
 
+[dependencies.serde]
+version = "1.0"
+
 [dependencies.serde_json]
 version = "1.0"
+
+[dependencies.serde_yaml]
+version = "0.9"
+
+[dependencies.toml]
+version = "0.8"
 
 [features]
 default = ["yaml", "toml", "csv", "ison", "toon"]
@@ -90,6 +99,27 @@ bench = false
 [[bin]]
 name = "fuzz_ungron"
 path = "fuzz_targets/fuzz_ungron.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_cross_format_transform"
+path = "fuzz_targets/fuzz_cross_format_transform.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tape_path_resolution"
+path = "fuzz_targets/fuzz_tape_path_resolution.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_streaming_formats"
+path = "fuzz_targets/fuzz_streaming_formats.rs"
 test = false
 doc = false
 bench = false

@@ -130,7 +130,7 @@ pub struct PoolStats {
 impl PoolStats {
     /// Calculate reuse rate (0.0 to 1.0).
     #[must_use]
-    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_precision_loss)] // Acceptable for statistical rate calculations
     pub fn reuse_rate(&self) -> f64 {
         if self.acquires == 0 {
             0.0
@@ -141,7 +141,7 @@ impl PoolStats {
 
     /// Calculate eviction rate (0.0 to 1.0).
     #[must_use]
-    #[allow(clippy::cast_precision_loss)]
+    #[allow(clippy::cast_precision_loss)] // Acceptable for statistical rate calculations
     pub fn eviction_rate(&self) -> f64 {
         if self.releases == 0 {
             0.0

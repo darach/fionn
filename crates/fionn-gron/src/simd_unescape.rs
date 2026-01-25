@@ -25,7 +25,7 @@ use std::arch::x86_64::{
 #[cfg(target_arch = "aarch64")]
 use std::arch::aarch64::{uint8x16_t, vceqq_u8, vdupq_n_u8, vld1q_u8, vmaxvq_u8};
 
-#[allow(unused_imports)]
+#[allow(unused_imports)] // OnceLock used conditionally per target_arch
 use std::sync::OnceLock;
 
 /// Error type for unescape operations.
@@ -109,7 +109,7 @@ pub fn unescape_json_string_simd(s: &[u8]) -> Result<Vec<u8>, UnescapeError> {
     }
 
     // Fallback to scalar
-    #[allow(unreachable_code)]
+    #[allow(unreachable_code)] // Reachable only when no SIMD available (non-x86/aarch64)
     {
         unescape_json_string_scalar(s, &mut out)?;
         Ok(out)
@@ -131,7 +131,7 @@ unsafe fn unescape_json_string_sse2(bytes: &[u8], out: &mut Vec<u8>) -> Result<(
         let mut i = 0;
 
         // Pre-compute SIMD constant for backslash
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let backslash_char = _mm_set1_epi8(b'\\' as i8);
 
         while i < len {
@@ -210,7 +210,7 @@ unsafe fn unescape_json_string_avx2(bytes: &[u8], out: &mut Vec<u8>) -> Result<(
         let mut i = 0;
 
         // Pre-compute SIMD constant for backslash
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let backslash_char = _mm256_set1_epi8(b'\\' as i8);
 
         while i < len {
@@ -271,7 +271,7 @@ unsafe fn find_next_backslash_avx2(
 
         // Handle remaining bytes with SSE2 or scalar
         if i + 16 <= len && has_sse2() {
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let sse_backslash = _mm_set1_epi8(b'\\' as i8);
             return find_next_backslash_sse2(bytes, i, sse_backslash);
         }

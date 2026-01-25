@@ -172,7 +172,7 @@ unsafe fn needs_quoting_sse2(bytes: &[u8]) -> bool {
 
             // Check for control chars (< 0x20) or high bytes (>= 0x80)
             let low_bound = _mm_set1_epi8(0x20);
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let high_bound = _mm_set1_epi8(0x7f_u8 as i8);
 
             let below_space = _mm_cmplt_epi8(chunk, low_bound);
@@ -180,15 +180,15 @@ unsafe fn needs_quoting_sse2(bytes: &[u8]) -> bool {
             let control_or_high = _mm_or_si128(below_space, above_tilde);
 
             // Check for specific special characters
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let dot = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b'.' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let open_bracket = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b'[' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let close_bracket = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b']' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let quote = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b'"' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let backslash = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b'\\' as i8));
 
             // Combine all checks
@@ -227,7 +227,7 @@ unsafe fn needs_quoting_avx2(bytes: &[u8]) -> bool {
             // Check for control chars (< 0x20) or high bytes (>= 0x80)
             // Note: AVX2 doesn't have _mm256_cmplt_epi8, so we use signed comparison
             let low_bound = _mm256_set1_epi8(0x20);
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let high_bound = _mm256_set1_epi8(0x7f_u8 as i8);
 
             // For signed comparison: bytes < 0x20 means (signed)byte < 0x20
@@ -240,15 +240,15 @@ unsafe fn needs_quoting_avx2(bytes: &[u8]) -> bool {
                 _mm256_or_si256(below_space, _mm256_or_si256(above_tilde, negative));
 
             // Check for specific special characters
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let dot = _mm256_cmpeq_epi8(chunk, _mm256_set1_epi8(b'.' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let open_bracket = _mm256_cmpeq_epi8(chunk, _mm256_set1_epi8(b'[' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let close_bracket = _mm256_cmpeq_epi8(chunk, _mm256_set1_epi8(b']' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let quote = _mm256_cmpeq_epi8(chunk, _mm256_set1_epi8(b'"' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let backslash = _mm256_cmpeq_epi8(chunk, _mm256_set1_epi8(b'\\' as i8));
 
             // Combine all checks
@@ -386,9 +386,9 @@ unsafe fn needs_escape_sse2(bytes: &[u8]) -> bool {
             let control = _mm_cmplt_epi8(chunk, low_bound);
 
             // Check for quote and backslash
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let quote = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b'"' as i8));
-            #[allow(clippy::cast_possible_wrap)]
+            #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
             let backslash = _mm_cmpeq_epi8(chunk, _mm_set1_epi8(b'\\' as i8));
 
             let needs_escape = _mm_or_si128(control, _mm_or_si128(quote, backslash));
@@ -416,9 +416,9 @@ unsafe fn needs_escape_avx2(bytes: &[u8]) -> bool {
 
         // Pre-compute constants
         let low_bound = _mm256_set1_epi8(0x20);
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let quote_char = _mm256_set1_epi8(b'"' as i8);
-        #[allow(clippy::cast_possible_wrap)]
+        #[allow(clippy::cast_possible_wrap)] // Safe: ASCII byte fits in i8
         let backslash_char = _mm256_set1_epi8(b'\\' as i8);
 
         // Process 32 bytes at a time
@@ -552,7 +552,7 @@ fn escape_json_string_slow(bytes: &[u8], out: &mut Vec<u8>) {
 
 /// Write a JSON value to output without escaping (for numbers, bools, null).
 #[inline]
-#[allow(dead_code)]
+#[allow(dead_code)] // Public API utility - may be used by downstream crates
 pub fn write_raw_value(value: &str, out: &mut Vec<u8>) {
     out.extend_from_slice(value.as_bytes());
 }
