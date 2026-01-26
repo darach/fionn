@@ -7,6 +7,7 @@
 [![CI](https://github.com/darach/fionn/actions/workflows/ci.yml/badge.svg)](https://github.com/darach/fionn/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/darach/fionn/badge.svg?branch=main)](https://coveralls.io/github/darach/fionn?branch=main)
 [![Crates.io](https://img.shields.io/crates/v/fionn.svg)](https://crates.io/crates/fionn)
+[![PyPI](https://img.shields.io/pypi/v/fionn.svg)](https://pypi.org/project/fionn/)
 [![Documentation](https://docs.rs/fionn/badge.svg)](https://docs.rs/fionn)
 [![License](https://img.shields.io/crates/l/fionn.svg)](https://github.com/darach/fionn#license)
 [![MSRV](https://img.shields.io/badge/MSRV-1.89-blue.svg)](https://github.com/darach/fionn)

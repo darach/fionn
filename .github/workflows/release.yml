@@ -100,10 +100,38 @@ jobs:
             ${{ matrix.name }}.zip.sha256
           if-no-files-found: ignore
 
+  # Collect hashes for SLSA provenance
+  collect-hashes:
+    name: Collect Hashes
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          path: artifacts
+
+      - name: Collect hashes
+        id: hash
+        run: |
+          # Collect all .sha256 files and format for SLSA
+          cd artifacts
+          find . -name "*.sha256" -exec cat {} \; > ../all-hashes.txt
+          cd ..
+          cat all-hashes.txt
+          # Base64 encode for SLSA generator
+          HASHES=$(cat all-hashes.txt | base64 -w0)
+          echo "hashes=$HASHES" >> $GITHUB_OUTPUT
+
   # Create GitHub release
   release:
     name: Release
-    needs: build
+    needs: [build, collect-hashes]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -191,12 +219,12 @@ jobs:
   # SLSA provenance generation
   provenance:
     name: Generate SLSA Provenance
-    needs: build
+    needs: collect-hashes
     permissions:
       actions: read
       id-token: write
       contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
     with:
-      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
