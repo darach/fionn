@@ -69,15 +69,15 @@ toon = ["fionn-simd/toon", "fionn-stream/toon"]
 all-formats = ["yaml", "toml", "csv", "ison", "toon"]
 
 [dependencies]
-fionn-core = { path = "../fionn-core", version = "0.1.0" }
-fionn-tape = { path = "../fionn-tape", version = "0.1.0" }
-fionn-ops = { path = "../fionn-ops", version = "0.1.0" }
-fionn-stream = { path = "../fionn-stream", version = "0.1.0" }
-fionn-gron = { path = "../fionn-gron", version = "0.1.0" }
-fionn-diff = { path = "../fionn-diff", version = "0.1.0" }
-fionn-crdt = { path = "../fionn-crdt", version = "0.1.0" }
-fionn-pool = { path = "../fionn-pool", version = "0.1.0" }
-fionn-simd = { path = "../fionn-simd", version = "0.1.0" }
+fionn-core = { path = "../fionn-core", version = "0.2.0" }
+fionn-tape = { path = "../fionn-tape", version = "0.2.0" }
+fionn-ops = { path = "../fionn-ops", version = "0.2.0" }
+fionn-stream = { path = "../fionn-stream", version = "0.2.0" }
+fionn-gron = { path = "../fionn-gron", version = "0.2.0" }
+fionn-diff = { path = "../fionn-diff", version = "0.2.0" }
+fionn-crdt = { path = "../fionn-crdt", version = "0.2.0" }
+fionn-pool = { path = "../fionn-pool", version = "0.2.0" }
+fionn-simd = { path = "../fionn-simd", version = "0.2.0" }
 clap = { version = "4.5", features = ["derive"] }
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }

@@ -13,7 +13,7 @@ keywords = ["json", "pool", "allocation"]
 categories = ["memory-management"]
 
 [dependencies]
-fionn-core = { path = "../fionn-core", version = "0.1.0" }
+fionn-core = { path = "../fionn-core", version = "0.2.0" }
 parking_lot = "0.12"
 simd-json = "0.14"
 
