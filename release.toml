@@ -1,22 +1,14 @@
 # cargo-release configuration
 # Usage: cargo release 0.2.0
 
-[workspace]
 allow-branch = ["main"]
 sign-commit = false
 sign-tag = false
 push = true
 push-remote = "origin"
-publish = false  # GitHub Actions handles crates.io/PyPI publishing
+publish = false
 pre-release-commit-message = "chore: release {{version}}"
 tag-message = "{{version}}"
 tag-prefix = "v"
 tag = true
 consolidate-commits = true
-
-# Sync version to pyproject.toml (Python bindings)
-[[pre-release-replacements]]
-file = "crates/fionn-py/pyproject.toml"
-search = 'version = "[0-9]+\\.[0-9]+\\.[0-9]+"'
-replace = 'version = "{{version}}"'
-exactly = 1
