@@ -1,5 +1,9 @@
 # fionn-py
 
+[![PyPI](https://img.shields.io/pypi/v/fionn.svg)](https://pypi.org/project/fionn/)
+[![Crates.io](https://img.shields.io/crates/v/fionn.svg)](https://crates.io/crates/fionn)
+[![License](https://img.shields.io/crates/l/fionn.svg)](https://github.com/darach/fionn#license)
+
 Python bindings for fionn - Fast JSON library with SIMD acceleration.
 
 ## Features
