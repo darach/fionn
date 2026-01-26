@@ -9,6 +9,6 @@ push-remote = "origin"
 publish = false
 pre-release-commit-message = "chore: release {{version}}"
 tag-message = "{{version}}"
-tag-prefix = "v"
+tag-prefix = ""
 tag = true
 consolidate-commits = true
