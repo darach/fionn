@@ -84,7 +84,7 @@ numpy = { version = "0.27", optional = true }
 criterion = "0.5"
 
 [build-dependencies]
-pyo3-build-config = "0.27"
+pyo3-build-config = "0.28"
 
 # Inherit base lints from workspace, then override for PyO3 bindings
 [lints.rust]
