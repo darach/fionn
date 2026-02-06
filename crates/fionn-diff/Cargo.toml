@@ -17,7 +17,7 @@ fionn-core = { path = "../fionn-core", version = "0.2.0" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = { version = "0.9", optional = true }
-toml = { version = "0.8", optional = true }
+toml = { version = "0.9", optional = true }
 
 [features]
 default = []
