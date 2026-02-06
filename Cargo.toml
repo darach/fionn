@@ -62,10 +62,3 @@ debug = true
 [profile.dev]
 panic = "abort"
 
-
-# RUSTSEC-2026-0007: bytes 1.11.0 vulnerability
-# https://github.com/advisories/GHSA-434x-w66g-qw3r
-# Pinned via sonic-rs 0.3.17 -> faststr -> bytes 1.11.0
-# Remove this patch when sonic-rs upgrades to bytes >= 1.11.1
-[patch.crates-io]
-bytes = "1.11.1"
