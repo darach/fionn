@@ -10,9 +10,10 @@
 //! Compares skip performance across all supported formats to understand
 //! format-specific overhead and optimization opportunities.
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::{FormatKind, TapeSource};
 use fionn_tape::DsonTape;
+use std::hint::black_box;
 
 /// Generate equivalent test data in multiple formats
 fn generate_test_data_json(fields: usize) -> String {

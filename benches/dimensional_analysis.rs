@@ -20,8 +20,9 @@
 //! 3. **Operation Chain**: Single op vs chained tape-to-tape
 //! 4. **Resource Usage**: Time, Memory, Allocations
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use std::alloc::{GlobalAlloc, Layout, System};
+use std::hint::black_box;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 

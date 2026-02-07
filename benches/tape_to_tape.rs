@@ -10,9 +10,10 @@
 //! Measures the performance of direct tape transformations between formats,
 //! comparing against traditional parse-serialize pipelines.
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::FormatKind;
 use fionn_simd::transform::{TransformOptions, UnifiedTape, transform};
+use std::hint::black_box;
 
 /// Generate structured JSON test data
 fn generate_json(size: &str) -> String {

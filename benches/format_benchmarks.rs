@@ -13,8 +13,8 @@
 //! - Structural complexity: flat, nested, wide, deep
 //! - Format-specific features: anchors, sections, tabular data, references
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
-use std::hint::black_box as hint_black_box;
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use std::hint::black_box;
 
 // =============================================================================
 // Test Data Generation
@@ -393,7 +393,7 @@ fn bench_json_baseline(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("fionn", name), data, |b, data| {
             b.iter(|| {
                 let tape = DsonTape::parse(black_box(data)).unwrap();
-                hint_black_box(tape);
+                black_box(tape);
             });
         });
 
@@ -437,7 +437,7 @@ fn bench_yaml_parsing(c: &mut Criterion) {
                 while pos + 64 <= bytes.len() {
                     let chunk: &[u8; 64] = bytes[pos..pos + 64].try_into().unwrap();
                     let mask = parser.scan_chunk(chunk);
-                    hint_black_box(mask);
+                    black_box(mask);
                     pos += 64;
                 }
             });
@@ -448,7 +448,7 @@ fn bench_yaml_parsing(c: &mut Criterion) {
             let parser = YamlParser::new();
             b.iter(|| {
                 let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                hint_black_box(positions);
+                black_box(positions);
             });
         });
 
@@ -459,7 +459,7 @@ fn bench_yaml_parsing(c: &mut Criterion) {
                 for line in bytes.split(|&b| b == b'\n') {
                     indent_sum += YamlParser::count_indent(line);
                 }
-                hint_black_box(indent_sum);
+                black_box(indent_sum);
             });
         });
     }
@@ -488,7 +488,7 @@ fn bench_yaml_features(c: &mut Criterion) {
                     }
                 }
             }
-            hint_black_box(anchors);
+            black_box(anchors);
         });
     });
 
@@ -502,7 +502,7 @@ fn bench_yaml_features(c: &mut Criterion) {
                     }
                 }
             }
-            hint_black_box(aliases);
+            black_box(aliases);
         });
     });
 
@@ -514,7 +514,7 @@ fn bench_yaml_features(c: &mut Criterion) {
                     merge_count += 1;
                 }
             }
-            hint_black_box(merge_count);
+            black_box(merge_count);
         });
     });
 
@@ -551,7 +551,7 @@ fn bench_toml_parsing(c: &mut Criterion) {
                 while pos + 64 <= bytes.len() {
                     let chunk: &[u8; 64] = bytes[pos..pos + 64].try_into().unwrap();
                     let mask = parser.scan_chunk(chunk);
-                    hint_black_box(mask);
+                    black_box(mask);
                     pos += 64;
                 }
             });
@@ -562,7 +562,7 @@ fn bench_toml_parsing(c: &mut Criterion) {
             let parser = TomlParser::new();
             b.iter(|| {
                 let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                hint_black_box(positions);
+                black_box(positions);
             });
         });
     }
@@ -589,7 +589,7 @@ fn bench_toml_features(c: &mut Criterion) {
                     sections.push(header);
                 }
             }
-            hint_black_box(sections);
+            black_box(sections);
         });
     });
 
@@ -605,7 +605,7 @@ fn bench_toml_features(c: &mut Criterion) {
                     count += 1;
                 }
             }
-            hint_black_box(count);
+            black_box(count);
         });
     });
 
@@ -614,7 +614,7 @@ fn bench_toml_features(c: &mut Criterion) {
         let dotted = b"database.connection.pool.size";
         b.iter(|| {
             let path = TomlParser::parse_dotted_key(black_box(dotted));
-            hint_black_box(path);
+            black_box(path);
         });
     });
 
@@ -651,7 +651,7 @@ fn bench_csv_parsing(c: &mut Criterion) {
                 while pos + 64 <= bytes.len() {
                     let chunk: &[u8; 64] = bytes[pos..pos + 64].try_into().unwrap();
                     let mask = parser.scan_chunk(chunk);
-                    hint_black_box(mask);
+                    black_box(mask);
                     pos += 64;
                 }
             });
@@ -662,7 +662,7 @@ fn bench_csv_parsing(c: &mut Criterion) {
             let parser = CsvParser::new();
             b.iter(|| {
                 let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                hint_black_box(positions);
+                black_box(positions);
             });
         });
 
@@ -673,7 +673,7 @@ fn bench_csv_parsing(c: &mut Criterion) {
                 for line in bytes.split(|&b| b == b'\n') {
                     field_count += CsvParser::count_fields_with_delimiter(line, b',');
                 }
-                hint_black_box(field_count);
+                black_box(field_count);
             });
         });
     }
@@ -702,7 +702,7 @@ fn bench_csv_features(c: &mut Criterion) {
                     }
                 }
             }
-            hint_black_box(quoted_count);
+            black_box(quoted_count);
         });
     });
 
@@ -711,7 +711,7 @@ fn bench_csv_features(c: &mut Criterion) {
         let sample_lines: Vec<&[u8]> = bytes.split(|&b| b == b'\n').take(10).collect();
         b.iter(|| {
             let delimiter = CsvParser::detect_delimiter(black_box(&sample_lines));
-            hint_black_box(delimiter);
+            black_box(delimiter);
         });
     });
 
@@ -748,7 +748,7 @@ fn bench_ison_parsing(c: &mut Criterion) {
                 while pos + 64 <= bytes.len() {
                     let chunk: &[u8; 64] = bytes[pos..pos + 64].try_into().unwrap();
                     let mask = parser.scan_chunk(chunk);
-                    hint_black_box(mask);
+                    black_box(mask);
                     pos += 64;
                 }
             });
@@ -759,7 +759,7 @@ fn bench_ison_parsing(c: &mut Criterion) {
             let parser = IsonParser::new();
             b.iter(|| {
                 let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                hint_black_box(positions);
+                black_box(positions);
             });
         });
     }
@@ -786,7 +786,7 @@ fn bench_ison_features(c: &mut Criterion) {
                     blocks.push(header);
                 }
             }
-            hint_black_box(blocks);
+            black_box(blocks);
         });
     });
 
@@ -800,7 +800,7 @@ fn bench_ison_features(c: &mut Criterion) {
                     parsed.push(reference);
                 }
             }
-            hint_black_box(parsed);
+            black_box(parsed);
         });
     });
 
@@ -809,7 +809,7 @@ fn bench_ison_features(c: &mut Criterion) {
         let decl = b"id:int name:string email:string active:bool score:float";
         b.iter(|| {
             let fields = IsonParser::parse_field_declaration(black_box(decl));
-            hint_black_box(fields);
+            black_box(fields);
         });
     });
 
@@ -825,7 +825,7 @@ fn bench_ison_features(c: &mut Criterion) {
                     }
                 }
             }
-            hint_black_box(rows);
+            black_box(rows);
         });
     });
 
@@ -862,7 +862,7 @@ fn bench_toon_parsing(c: &mut Criterion) {
                 while pos + 64 <= bytes.len() {
                     let chunk: &[u8; 64] = bytes[pos..pos + 64].try_into().unwrap();
                     let mask = parser.scan_chunk(chunk);
-                    hint_black_box(mask);
+                    black_box(mask);
                     pos += 64;
                 }
             });
@@ -873,7 +873,7 @@ fn bench_toon_parsing(c: &mut Criterion) {
             let parser = ToonParser::new();
             b.iter(|| {
                 let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                hint_black_box(positions);
+                black_box(positions);
             });
         });
 
@@ -884,7 +884,7 @@ fn bench_toon_parsing(c: &mut Criterion) {
                 for line in bytes.split(|&b| b == b'\n') {
                     indent_sum += ToonParser::count_indent(line);
                 }
-                hint_black_box(indent_sum);
+                black_box(indent_sum);
             });
         });
     }
@@ -911,7 +911,7 @@ fn bench_toon_features(c: &mut Criterion) {
                     headers.push(header);
                 }
             }
-            hint_black_box(headers);
+            black_box(headers);
         });
     });
 
@@ -927,7 +927,7 @@ fn bench_toon_features(c: &mut Criterion) {
                     paths.push(path);
                 }
             }
-            hint_black_box(paths);
+            black_box(paths);
         });
     });
 
@@ -956,7 +956,7 @@ fn bench_format_comparison(c: &mut Criterion) {
     group.bench_function("json/fionn", |b| {
         b.iter(|| {
             let tape = fionn_tape::DsonTape::parse(black_box(&json_data)).unwrap();
-            hint_black_box(tape);
+            black_box(tape);
         });
     });
 
@@ -968,7 +968,7 @@ fn bench_format_comparison(c: &mut Criterion) {
         let bytes = yaml_data.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -980,7 +980,7 @@ fn bench_format_comparison(c: &mut Criterion) {
         let bytes = toml_data.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -992,7 +992,7 @@ fn bench_format_comparison(c: &mut Criterion) {
         let bytes = csv_data.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1004,7 +1004,7 @@ fn bench_format_comparison(c: &mut Criterion) {
         let bytes = ison_data.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1016,7 +1016,7 @@ fn bench_format_comparison(c: &mut Criterion) {
         let bytes = toon_data.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1040,7 +1040,7 @@ fn bench_scaling(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("json/records", size), &json, |b, json| {
             b.iter(|| {
                 let tape = fionn_tape::DsonTape::parse(black_box(json)).unwrap();
-                hint_black_box(tape);
+                black_box(tape);
             });
         });
 
@@ -1053,7 +1053,7 @@ fn bench_scaling(c: &mut Criterion) {
                 let bytes = csv.as_bytes();
                 b.iter(|| {
                     let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                    hint_black_box(positions);
+                    black_box(positions);
                 });
             });
         }
@@ -1067,7 +1067,7 @@ fn bench_scaling(c: &mut Criterion) {
                 let bytes = ison.as_bytes();
                 b.iter(|| {
                     let positions = parser.parse_structural(black_box(bytes)).unwrap();
-                    hint_black_box(positions);
+                    black_box(positions);
                 });
             });
         }
@@ -1095,7 +1095,7 @@ fn bench_latency(c: &mut Criterion) {
     group.bench_function("json/tiny", |b| {
         b.iter(|| {
             let tape = fionn_tape::DsonTape::parse(black_box(&json)).unwrap();
-            hint_black_box(tape);
+            black_box(tape);
         });
     });
 
@@ -1106,7 +1106,7 @@ fn bench_latency(c: &mut Criterion) {
         let bytes = yaml.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1117,7 +1117,7 @@ fn bench_latency(c: &mut Criterion) {
         let bytes = toml.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1128,7 +1128,7 @@ fn bench_latency(c: &mut Criterion) {
         let bytes = csv.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1139,7 +1139,7 @@ fn bench_latency(c: &mut Criterion) {
         let bytes = ison.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 
@@ -1150,7 +1150,7 @@ fn bench_latency(c: &mut Criterion) {
         let bytes = toon.as_bytes();
         b.iter(|| {
             let positions = parser.parse_structural(black_box(bytes)).unwrap();
-            hint_black_box(positions);
+            black_box(positions);
         });
     });
 

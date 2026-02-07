@@ -10,7 +10,7 @@ allow = [
 #    "Unicode-DFS-2016",
 #    "CC0-1.0",
 #    "0BSD",
-#    "Zlib",
+    "Zlib",
 #    "BSL-1.0",
     "Unlicense",
     "Unicode-3.0",

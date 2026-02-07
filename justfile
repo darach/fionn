@@ -408,6 +408,411 @@ build-windows-x64:
     cargo build --release --target x86_64-pc-windows-msvc --bin fionn
 
 # =============================================================================
+# Release Signing (requires cosign: https://docs.sigstore.dev/cosign/system_config/installation/)
+# =============================================================================
+
+# Test sign+verify cycle: build a release binary, package, sign, and verify
+sign-test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # Check for cosign
+    if ! command -v cosign &>/dev/null; then
+        echo "ERROR: cosign not found. Install from https://docs.sigstore.dev/cosign/system_config/installation/"
+        exit 1
+    fi
+    echo "cosign $(cosign version 2>&1 | head -1)"
+
+    WORKDIR=$(mktemp -d)
+    trap 'rm -rf "$WORKDIR"' EXIT
+
+    echo "=== Building release binary ==="
+    cargo build --release --bin fionn
+
+    echo "=== Packaging test artifact ==="
+    tar -czf "$WORKDIR/fionn-test.tar.gz" -C target/release fionn
+    sha256sum "$WORKDIR/fionn-test.tar.gz" > "$WORKDIR/fionn-test.tar.gz.sha256"
+    ls -lh "$WORKDIR/fionn-test.tar.gz"
+
+    echo "=== Signing (keyless OIDC — opens browser) ==="
+    cosign sign-blob --yes "$WORKDIR/fionn-test.tar.gz" \
+        --output-signature "$WORKDIR/fionn-test.tar.gz.sig" \
+        --output-certificate "$WORKDIR/fionn-test.tar.gz.pem"
+
+    echo "=== Verifying signature ==="
+    IDENTITY=$(openssl x509 -in "$WORKDIR/fionn-test.tar.gz.pem" -noout -ext subjectAltName 2>/dev/null \
+        | grep -oP 'email:\K[^,]+' || true)
+    ISSUER=$(openssl x509 -in "$WORKDIR/fionn-test.tar.gz.pem" -noout -text 2>/dev/null \
+        | grep -oP '1.3.6.1.4.1.57264.1.1:\K.*' || true)
+
+    if [ -z "$IDENTITY" ] || [ -z "$ISSUER" ]; then
+        echo "Extracting identity from certificate..."
+        openssl x509 -in "$WORKDIR/fionn-test.tar.gz.pem" -noout -text | grep -A1 "Subject Alternative Name"
+        echo ""
+        echo "Enter the email/URI shown above as certificate-identity:"
+        read -r IDENTITY
+        echo "Enter the OIDC issuer (e.g. https://accounts.google.com, https://github.com/login/oauth, https://token.actions.githubusercontent.com):"
+        read -r ISSUER
+    fi
+
+    cosign verify-blob "$WORKDIR/fionn-test.tar.gz" \
+        --signature "$WORKDIR/fionn-test.tar.gz.sig" \
+        --certificate "$WORKDIR/fionn-test.tar.gz.pem" \
+        --certificate-identity "$IDENTITY" \
+        --certificate-oidc-issuer "$ISSUER"
+
+    echo ""
+    echo "=== PASS: sign + verify succeeded ==="
+    echo "  artifact:    fionn-test.tar.gz"
+    echo "  signature:   fionn-test.tar.gz.sig"
+    echo "  certificate: fionn-test.tar.gz.pem"
+    echo "  identity:    $IDENTITY"
+    echo "  issuer:      $ISSUER"
+
+# Verify a release artifact (usage: just sign-verify fionn-linux-x86_64.tar.gz identity issuer)
+sign-verify artifact identity issuer:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    ARTIFACT="{{artifact}}"
+    SIG="${ARTIFACT}.sig"
+    CERT="${ARTIFACT}.pem"
+
+    for f in "$ARTIFACT" "$SIG" "$CERT"; do
+        if [ ! -f "$f" ]; then
+            echo "ERROR: $f not found"
+            echo "Expected files: $ARTIFACT, $SIG, $CERT"
+            exit 1
+        fi
+    done
+
+    echo "=== Verifying $ARTIFACT ==="
+    cosign verify-blob "$ARTIFACT" \
+        --signature "$SIG" \
+        --certificate "$CERT" \
+        --certificate-identity "{{identity}}" \
+        --certificate-oidc-issuer "{{issuer}}"
+
+    echo "=== PASS: $ARTIFACT signature valid ==="
+
+# Download and verify a GitHub release artifact (usage: just sign-verify-release v0.1.0 fionn-linux-x86_64.tar.gz identity issuer)
+sign-verify-release tag artifact identity issuer:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    WORKDIR=$(mktemp -d)
+    trap 'rm -rf "$WORKDIR"' EXIT
+    REPO="darach/fionn"
+
+    echo "=== Downloading {{artifact}} from release {{tag}} ==="
+    for f in "{{artifact}}" "{{artifact}}.sig" "{{artifact}}.pem" "{{artifact}}.sha256"; do
+        echo "  $f"
+        gh release download "{{tag}}" --repo "$REPO" --pattern "$f" --dir "$WORKDIR" || \
+            echo "  WARN: $f not found in release"
+    done
+
+    echo "=== Checking SHA-256 ==="
+    if [ -f "$WORKDIR/{{artifact}}.sha256" ]; then
+        (cd "$WORKDIR" && sha256sum -c "{{artifact}}.sha256")
+    else
+        echo "  SKIP: no .sha256 file"
+    fi
+
+    echo "=== Verifying cosign signature ==="
+    cosign verify-blob "$WORKDIR/{{artifact}}" \
+        --signature "$WORKDIR/{{artifact}}.sig" \
+        --certificate "$WORKDIR/{{artifact}}.pem" \
+        --certificate-identity "{{identity}}" \
+        --certificate-oidc-issuer "{{issuer}}"
+
+    echo "=== PASS: {{artifact}} from {{tag}} is valid ==="
+
+# Generate signing readiness report for local build artifacts
+sign-report:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    # --- header ---
+    echo "==============================================================================="
+    echo "  Release Signing Report"
+    echo "  $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+    echo "  commit: $(git rev-parse --short HEAD) ($(git rev-parse --abbrev-ref HEAD))"
+    echo "==============================================================================="
+    echo ""
+
+    # --- tooling ---
+    echo "Tooling"
+    echo "-------"
+    COSIGN_OK=false
+    if command -v cosign &>/dev/null; then
+        COSIGN_VER=$(cosign version 2>&1 | grep -oP 'v[\d.]+' | head -1 || cosign version 2>&1 | head -1)
+        echo "  cosign:  $COSIGN_VER"
+        COSIGN_OK=true
+    else
+        echo "  cosign:  NOT INSTALLED"
+    fi
+    if command -v openssl &>/dev/null; then
+        echo "  openssl: $(openssl version 2>&1 | head -1)"
+    else
+        echo "  openssl: NOT INSTALLED"
+    fi
+    echo "  cargo:   $(cargo --version)"
+    echo ""
+
+    # --- CI workflow analysis ---
+    echo "CI Workflow: .github/workflows/release.yml"
+    echo "--------------------------------------------"
+    RELEASE_YML=".github/workflows/release.yml"
+    if [ -f "$RELEASE_YML" ]; then
+        # Check for sign job
+        if grep -q "^  sign:" "$RELEASE_YML"; then
+            echo "  sign job:         PRESENT"
+        else
+            echo "  sign job:         MISSING"
+        fi
+
+        # Check cosign-installer is pinned
+        COSIGN_REF=$(grep -oP 'sigstore/cosign-installer@\S+' "$RELEASE_YML" | head -1 || true)
+        if [ -n "$COSIGN_REF" ]; then
+            if echo "$COSIGN_REF" | grep -qP '@[0-9a-f]{40}'; then
+                echo "  cosign-installer: SHA-pinned ($COSIGN_REF)"
+            else
+                echo "  cosign-installer: UNPINNED ($COSIGN_REF)"
+            fi
+        else
+            echo "  cosign-installer: NOT FOUND"
+        fi
+
+        # Check id-token permission
+        if grep -B5 "sign:" "$RELEASE_YML" | grep -q "id-token:" 2>/dev/null || \
+           grep -A10 "^  sign:" "$RELEASE_YML" | grep -q "id-token: write" 2>/dev/null; then
+            echo "  id-token: write:  PRESENT (keyless OIDC)"
+        else
+            echo "  id-token: write:  MISSING (keyless signing will fail)"
+        fi
+
+        # Check contents: write for uploading sigs
+        if grep -A10 "^  sign:" "$RELEASE_YML" | grep -q "contents: write" 2>/dev/null; then
+            echo "  contents: write:  PRESENT (can upload to release)"
+        else
+            echo "  contents: write:  MISSING (cannot upload signatures)"
+        fi
+
+        # Check SLSA provenance
+        if grep -q "slsa-github-generator" "$RELEASE_YML"; then
+            SLSA_REF=$(grep -oP 'slsa-framework/slsa-github-generator/\S+' "$RELEASE_YML" | head -1 || true)
+            echo "  SLSA provenance:  PRESENT ($SLSA_REF)"
+        else
+            echo "  SLSA provenance:  NOT CONFIGURED"
+        fi
+    else
+        echo "  ERROR: $RELEASE_YML not found"
+    fi
+    echo ""
+
+    # --- build local artifact ---
+    echo "Local Artifact Build"
+    echo "--------------------"
+    WORKDIR=$(mktemp -d)
+    trap 'rm -rf "$WORKDIR"' EXIT
+
+    echo "  building release binary..."
+    cargo build --release --bin fionn 2>&1 | tail -1
+
+    # Produce all the artifacts the CI matrix would produce (for the local target)
+    ARCH=$(uname -m)
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    case "$ARCH" in
+        x86_64)  TARGET_ARCH="x86_64" ;;
+        aarch64) TARGET_ARCH="aarch64" ;;
+        arm64)   TARGET_ARCH="aarch64" ;;
+        *)       TARGET_ARCH="$ARCH" ;;
+    esac
+    ARTIFACT_NAME="fionn-${OS}-${TARGET_ARCH}"
+
+    tar -czf "$WORKDIR/${ARTIFACT_NAME}.tar.gz" -C target/release fionn
+    sha256sum "$WORKDIR/${ARTIFACT_NAME}.tar.gz" > "$WORKDIR/${ARTIFACT_NAME}.tar.gz.sha256"
+
+    ARTIFACT_SIZE=$(stat --printf='%s' "$WORKDIR/${ARTIFACT_NAME}.tar.gz" 2>/dev/null || stat -f%z "$WORKDIR/${ARTIFACT_NAME}.tar.gz")
+    ARTIFACT_SHA=$(cut -d' ' -f1 "$WORKDIR/${ARTIFACT_NAME}.tar.gz.sha256")
+    echo "  artifact: ${ARTIFACT_NAME}.tar.gz ($(numfmt --to=iec "$ARTIFACT_SIZE" 2>/dev/null || echo "${ARTIFACT_SIZE} bytes"))"
+    echo "  sha256:   ${ARTIFACT_SHA}"
+    echo ""
+
+    # --- CI release matrix ---
+    echo "Release Matrix (CI)"
+    echo "--------------------"
+    echo "  The release workflow builds these artifacts:"
+    echo ""
+    printf "  %-34s  %-16s  %s\n" "ARTIFACT" "RUNNER" "STATUS"
+    printf "  %-34s  %-16s  %s\n" "--------" "------" "------"
+
+    # These match the matrix in release.yml
+    TARGETS=(
+        "fionn-linux-x86_64.tar.gz|ubuntu-latest|x86_64-unknown-linux-gnu"
+        "fionn-linux-x86_64-musl.tar.gz|ubuntu-latest|x86_64-unknown-linux-musl"
+        "fionn-linux-aarch64.tar.gz|ubuntu-latest|aarch64-unknown-linux-gnu"
+        "fionn-macos-x86_64.tar.gz|macos-latest|x86_64-apple-darwin"
+        "fionn-macos-aarch64.tar.gz|macos-latest|aarch64-apple-darwin"
+        "fionn-windows-x86_64.zip|windows-latest|x86_64-pc-windows-msvc"
+    )
+
+    for entry in "${TARGETS[@]}"; do
+        IFS='|' read -r name runner target <<< "$entry"
+        if [ "$name" = "${ARTIFACT_NAME}.tar.gz" ]; then
+            printf "  %-34s  %-16s  built (local)\n" "$name" "$runner"
+        else
+            printf "  %-34s  %-16s  CI only\n" "$name" "$runner"
+        fi
+    done
+    echo ""
+
+    # --- signing check ---
+    echo "Signing Check"
+    echo "-------------"
+    SIGN_OK=false
+    VERIFY_OK=false
+
+    EXPECTED_SIGS=(
+        "fionn-linux-x86_64.tar.gz.sig"
+        "fionn-linux-x86_64.tar.gz.pem"
+        "fionn-linux-x86_64-musl.tar.gz.sig"
+        "fionn-linux-x86_64-musl.tar.gz.pem"
+        "fionn-linux-aarch64.tar.gz.sig"
+        "fionn-linux-aarch64.tar.gz.pem"
+        "fionn-macos-x86_64.tar.gz.sig"
+        "fionn-macos-x86_64.tar.gz.pem"
+        "fionn-macos-aarch64.tar.gz.sig"
+        "fionn-macos-aarch64.tar.gz.pem"
+        "fionn-windows-x86_64.zip.sig"
+        "fionn-windows-x86_64.zip.pem"
+    )
+
+    if [ "$COSIGN_OK" = true ]; then
+        # Local key-pair sign+verify (no network, no OIDC)
+        echo "  generating ephemeral test keypair..."
+        COSIGN_PASSWORD="" cosign generate-key-pair --output-key-prefix "$WORKDIR/test" 2>/dev/null
+        echo ""
+
+        echo "  signing local artifact with test key..."
+        if COSIGN_PASSWORD="" cosign sign-blob --yes --tlog-upload=false --key "$WORKDIR/test.key" \
+            --output-signature "$WORKDIR/${ARTIFACT_NAME}.tar.gz.sig" \
+            "$WORKDIR/${ARTIFACT_NAME}.tar.gz" 2>&1; then
+            SIGN_OK=true
+            SIG_SIZE=$(stat --printf='%s' "$WORKDIR/${ARTIFACT_NAME}.tar.gz.sig" 2>/dev/null || stat -f%z "$WORKDIR/${ARTIFACT_NAME}.tar.gz.sig")
+            echo "  signature:   ${ARTIFACT_NAME}.tar.gz.sig (${SIG_SIZE} bytes)"
+        else
+            echo "  signing failed"
+        fi
+        echo ""
+
+        if [ "$SIGN_OK" = true ]; then
+            echo "  verifying signature with test public key..."
+            if cosign verify-blob --insecure-ignore-tlog --key "$WORKDIR/test.pub" \
+                --signature "$WORKDIR/${ARTIFACT_NAME}.tar.gz.sig" \
+                "$WORKDIR/${ARTIFACT_NAME}.tar.gz" 2>&1; then
+                VERIFY_OK=true
+                echo "    Result: PASS"
+            else
+                echo "    Result: FAIL"
+            fi
+        fi
+        echo ""
+        echo "  note: CI uses keyless Sigstore OIDC (id-token: write), not a static key."
+        echo "  run 'just sign-test' interactively to test the full keyless flow."
+    else
+        echo "  SKIP: cosign not installed — cannot test signing"
+        echo "  Install: https://docs.sigstore.dev/cosign/system_config/installation/"
+    fi
+    echo ""
+
+    # --- per-artifact expected files table ---
+    echo "Expected Release Assets (per artifact)"
+    echo "---------------------------------------"
+    printf "  %-38s  %s\n" "FILE" "PURPOSE"
+    printf "  %-38s  %s\n" "----" "-------"
+    printf "  %-38s  %s\n" "<name>.tar.gz / .zip"       "release binary"
+    printf "  %-38s  %s\n" "<name>.tar.gz.sha256"        "SHA-256 checksum"
+    printf "  %-38s  %s\n" "<name>.tar.gz.sig"           "cosign detached signature"
+    printf "  %-38s  %s\n" "<name>.tar.gz.pem"           "Fulcio signing certificate"
+    printf "  %-38s  %s\n" "multiple.intoto.jsonl"       "SLSA provenance attestation"
+    echo ""
+
+    # --- CI workflow action pins ---
+    echo "Action Pin Audit (release.yml)"
+    echo "------------------------------"
+    UNPINNED=0
+    while IFS= read -r line; do
+        ref=$(echo "$line" | grep -oP 'uses: \K\S+')
+        if echo "$ref" | grep -qP '@[0-9a-f]{40}'; then
+            printf "  PINNED   %s\n" "$ref"
+        else
+            printf "  UNPINNED %s\n" "$ref"
+            UNPINNED=$((UNPINNED + 1))
+        fi
+    done < <(grep -E '^\s+uses:' "$RELEASE_YML")
+    if [ "$UNPINNED" -eq 0 ]; then
+        echo "  All actions are SHA-pinned."
+    else
+        echo "  WARNING: $UNPINNED action(s) not SHA-pinned."
+    fi
+    echo ""
+
+    # --- verification commands for users ---
+    echo "Verification Commands (for end users)"
+    echo "--------------------------------------"
+    echo "  # After a release, users can verify with:"
+    echo ""
+    echo "  # 1. Check SHA-256"
+    echo "  sha256sum -c fionn-linux-x86_64.tar.gz.sha256"
+    echo ""
+    echo "  # 2. Verify cosign signature (CI identity)"
+    echo "  cosign verify-blob fionn-linux-x86_64.tar.gz \\"
+    echo "    --signature fionn-linux-x86_64.tar.gz.sig \\"
+    echo "    --certificate fionn-linux-x86_64.tar.gz.pem \\"
+    echo "    --certificate-identity 'https://github.com/darach/fionn/.github/workflows/release.yml@refs/tags/<TAG>' \\"
+    echo "    --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'"
+    echo ""
+    echo "  # 3. Verify SLSA provenance"
+    echo "  slsa-verifier verify-artifact fionn-linux-x86_64.tar.gz \\"
+    echo "    --provenance-path multiple.intoto.jsonl \\"
+    echo "    --source-uri github.com/darach/fionn \\"
+    echo "    --source-tag <TAG>"
+    echo ""
+
+    # --- summary ---
+    echo "==============================================================================="
+    echo "  Summary"
+    echo "==============================================================================="
+    CHECKS_PASS=0
+    CHECKS_FAIL=0
+
+    check() {
+        local label="$1" ok="$2"
+        if [ "$ok" = "true" ]; then
+            printf "  [PASS]  %s\n" "$label"
+            CHECKS_PASS=$((CHECKS_PASS + 1))
+        else
+            printf "  [FAIL]  %s\n" "$label"
+            CHECKS_FAIL=$((CHECKS_FAIL + 1))
+        fi
+    }
+
+    check "sign job in release.yml" "$(grep -q '^  sign:' "$RELEASE_YML" && echo true || echo false)"
+    check "cosign-installer SHA-pinned" "$(grep -P 'cosign-installer@[0-9a-f]{40}' "$RELEASE_YML" >/dev/null && echo true || echo false)"
+    check "id-token: write permission" "$(grep -A10 '^  sign:' "$RELEASE_YML" | grep -q 'id-token: write' && echo true || echo false)"
+    check "contents: write permission" "$(grep -A10 '^  sign:' "$RELEASE_YML" | grep -q 'contents: write' && echo true || echo false)"
+    check "SLSA provenance configured" "$(grep -q 'slsa-github-generator' "$RELEASE_YML" && echo true || echo false)"
+    check "all release.yml actions SHA-pinned" "$([ $UNPINNED -eq 0 ] && echo true || echo false)"
+    check "cosign installed locally" "$COSIGN_OK"
+    check "local artifact signed" "$SIGN_OK"
+    check "local signature verified" "$VERIFY_OK"
+
+    echo ""
+    echo "  $CHECKS_PASS passed, $CHECKS_FAIL failed"
+    echo "==============================================================================="
+
+# =============================================================================
 # Development Utilities
 # =============================================================================
 

@@ -13,10 +13,11 @@
 //! - Streaming throughput with backpressure simulation
 //! - Line-by-line vs batch processing comparison
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_stream::skiptape::CompiledSchema;
 use fionn_stream::skiptape::jsonl::SimdJsonlBatchProcessor;
 use fionn_stream::streaming::StreamingProcessor;
+use std::hint::black_box;
 
 // =============================================================================
 // Test Data Generation

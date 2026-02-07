@@ -17,9 +17,10 @@
 //! - **Memory Efficiency**: bytes allocated per matched field
 //! - **Latency Distribution**: p50, p95, p99 at scale
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_stream::skiptape::jsonl::SimdJsonlBatchProcessor;
 use fionn_stream::skiptape::schema::CompiledSchema;
+use std::hint::black_box;
 use std::time::Instant;
 
 // =============================================================================
