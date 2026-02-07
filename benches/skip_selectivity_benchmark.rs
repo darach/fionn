@@ -14,10 +14,11 @@
 //! 3. How does skip position (early vs late) affect performance?
 //! 4. How do different formats compare for skip operations?
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::{FormatKind, TapeSource};
 use fionn_simd::transform::UnifiedTape;
 use fionn_tape::DsonTape;
+use std::hint::black_box;
 
 // =============================================================================
 // Test Data Generation

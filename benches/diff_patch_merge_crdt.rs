@@ -14,7 +14,7 @@
 //! - Multi-document merge operations
 //! - Roundtrip performance (diff then apply)
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::{MergeStrategy, OperationValue};
 use fionn_crdt::merge::{
     MergeTable, OptimizedMergeProcessor, PreParsedValue, StrategyBatches, Winner,
@@ -25,6 +25,7 @@ use fionn_diff::{
     merge_many, merge_patch_to_value,
 };
 use serde_json::{Value, json};
+use std::hint::black_box;
 
 // =============================================================================
 // Test Data Generation

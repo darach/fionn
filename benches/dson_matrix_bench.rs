@@ -15,8 +15,8 @@
 //! - Document sizes: tiny (50B), small (1KB), medium (10KB), large (100KB)
 //! - Schema complexity: none, simple, complex, wildcard
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
-use std::hint::black_box as hint_black_box;
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
+use std::hint::black_box;
 
 // =============================================================================
 // Test Data Generation
@@ -374,7 +374,7 @@ fn bench_jsonl_dson(c: &mut Criterion) {
                                 black_box(schema),
                                 black_box(ops),
                             );
-                            hint_black_box(result);
+                            black_box(result);
                         });
                     },
                 );
@@ -428,7 +428,7 @@ fn bench_isonl_dson(c: &mut Criterion) {
                                 black_box(schema),
                                 black_box(ops),
                             );
-                            hint_black_box(result);
+                            black_box(result);
                         });
                     },
                 );
@@ -482,7 +482,7 @@ fn bench_csv_dson(c: &mut Criterion) {
                                 black_box(schema),
                                 black_box(ops),
                             );
-                            hint_black_box(result);
+                            black_box(result);
                         });
                     },
                 );
@@ -536,7 +536,7 @@ fn bench_yaml_dson(c: &mut Criterion) {
                                 black_box(schema),
                                 black_box(ops),
                             );
-                            hint_black_box(result);
+                            black_box(result);
                         });
                     },
                 );
@@ -590,7 +590,7 @@ fn bench_toml_dson(c: &mut Criterion) {
                                 black_box(schema),
                                 black_box(ops),
                             );
-                            hint_black_box(result);
+                            black_box(result);
                         });
                     },
                 );
@@ -644,7 +644,7 @@ fn bench_toon_dson(c: &mut Criterion) {
                                 black_box(schema),
                                 black_box(ops),
                             );
-                            hint_black_box(result);
+                            black_box(result);
                         });
                     },
                 );
@@ -698,7 +698,7 @@ fn bench_crdt_operations(c: &mut Criterion) {
         let mut vc = VectorClock::new();
         b.iter(|| {
             vc.increment(black_box("replica_1"));
-            hint_black_box(&vc);
+            black_box(&vc);
         });
     });
 
@@ -712,7 +712,7 @@ fn bench_crdt_operations(c: &mut Criterion) {
         b.iter(|| {
             let mut vc = vc1.clone();
             vc.merge(black_box(&vc2));
-            hint_black_box(vc);
+            black_box(vc);
         });
     });
 
@@ -725,7 +725,7 @@ fn bench_crdt_operations(c: &mut Criterion) {
         vc2.increment("r1");
         b.iter(|| {
             let result = vc1.happened_before(black_box(&vc2));
-            hint_black_box(result);
+            black_box(result);
         });
     });
 
@@ -733,7 +733,7 @@ fn bench_crdt_operations(c: &mut Criterion) {
     group.bench_function("crdt_processor/create", |b| {
         b.iter(|| {
             let processor = FormatCrdtProcessor::new(MockProcessor, black_box("replica_1"));
-            hint_black_box(processor);
+            black_box(processor);
         });
     });
 
@@ -742,7 +742,7 @@ fn bench_crdt_operations(c: &mut Criterion) {
         let schema = schemas::none();
         b.iter(|| {
             let result = processor.process(black_box(b"{}"), black_box(&schema));
-            hint_black_box(result);
+            black_box(result);
         });
     });
 
@@ -755,7 +755,7 @@ fn bench_crdt_operations(c: &mut Criterion) {
         let since = VectorClock::new();
         b.iter(|| {
             let delta = processor.generate_delta(black_box(&since));
-            hint_black_box(delta);
+            black_box(delta);
         });
     });
 
@@ -787,7 +787,7 @@ fn bench_cross_format_comparison(c: &mut Criterion) {
                 black_box(&schema),
                 black_box(&ops),
             );
-            hint_black_box(result);
+            black_box(result);
         });
     });
 
@@ -801,7 +801,7 @@ fn bench_cross_format_comparison(c: &mut Criterion) {
             b.iter(|| {
                 let result =
                     processor.process(black_box(&isonl_data), black_box(&schema), black_box(&ops));
-                hint_black_box(result);
+                black_box(result);
             });
         });
     }
@@ -816,7 +816,7 @@ fn bench_cross_format_comparison(c: &mut Criterion) {
             b.iter(|| {
                 let result =
                     processor.process(black_box(&csv_data), black_box(&schema), black_box(&ops));
-                hint_black_box(result);
+                black_box(result);
             });
         });
     }
@@ -831,7 +831,7 @@ fn bench_cross_format_comparison(c: &mut Criterion) {
             b.iter(|| {
                 let result =
                     processor.process(black_box(&yaml_data), black_box(&schema), black_box(&ops));
-                hint_black_box(result);
+                black_box(result);
             });
         });
     }
@@ -846,7 +846,7 @@ fn bench_cross_format_comparison(c: &mut Criterion) {
             b.iter(|| {
                 let result =
                     processor.process(black_box(&toml_data), black_box(&schema), black_box(&ops));
-                hint_black_box(result);
+                black_box(result);
             });
         });
     }
@@ -861,7 +861,7 @@ fn bench_cross_format_comparison(c: &mut Criterion) {
             b.iter(|| {
                 let result =
                     processor.process(black_box(&toon_data), black_box(&schema), black_box(&ops));
-                hint_black_box(result);
+                black_box(result);
             });
         });
     }

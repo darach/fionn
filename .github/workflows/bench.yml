@@ -9,7 +9,6 @@ on:
 # Restrict permissions for security
 permissions:
   contents: read
-  pull-requests: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,6 +18,9 @@ jobs:
   benchmark:
     name: Performance Regression Check
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout PR
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

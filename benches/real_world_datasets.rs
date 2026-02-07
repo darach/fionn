@@ -14,12 +14,13 @@
 //! - Log entries
 //! - Database exports
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::TapeSource;
 use fionn_diff::{DiffOptions, json_diff, json_diff_with_options};
 use fionn_gron::{GronOptions, gron};
 use fionn_tape::DsonTape;
 use serde_json::{Value, json};
+use std::hint::black_box;
 
 // =============================================================================
 // Realistic Data Generators

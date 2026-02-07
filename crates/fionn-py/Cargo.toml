@@ -66,8 +66,8 @@ anyhow = "1.0"
 ahash = "0.8"
 
 # SIMD JSON parsing (for orjson-level performance)
-simd-json = "0.14"
-sonic-rs = "0.3"
+simd-json = "0.17"
+sonic-rs = "0.5"
 
 # Fast number formatting (for direct serialization)
 itoa = "1.0"
@@ -81,7 +81,7 @@ numpy = { version = "0.27", optional = true }
 
 [dev-dependencies]
 # For Rust-side tests
-criterion = "0.5"
+criterion = "0.8"
 
 [build-dependencies]
 pyo3-build-config = "0.28"

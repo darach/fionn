@@ -136,7 +136,7 @@ fn bench_observed_remove_processing(c: &mut Criterion) {
                             },
                         };
 
-                        let _result = processor.process_operation(&op).unwrap();
+                        let _result = processor.process_operation(&op);
                     }
 
                     black_box(processor);

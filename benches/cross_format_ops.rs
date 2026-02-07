@@ -14,11 +14,12 @@
 //! 3. Streaming CRDT pipeline
 //! 4. Schema-projected extraction across formats
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::TapeSource;
 use fionn_diff::json_diff;
 use fionn_tape::DsonTape;
 use serde_json::Value;
+use std::hint::black_box;
 
 #[cfg(feature = "yaml")]
 use fionn_core::FormatKind;

@@ -12,11 +12,12 @@
 //! Measures memory allocation patterns across different tape types and formats.
 //! Uses allocation counting to understand memory efficiency.
 
-use criterion::{BenchmarkId, Criterion, Throughput, black_box, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use fionn_core::{FormatKind, TapeSource};
 use fionn_simd::transform::UnifiedTape;
 use fionn_tape::DsonTape;
 use std::alloc::{GlobalAlloc, Layout, System};
+use std::hint::black_box;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Global allocator that counts allocations

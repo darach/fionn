@@ -37,22 +37,22 @@ fionn-crdt = { path = "../fionn-crdt", version = "0.2.0" }
 fionn-pool = { path = "../fionn-pool", version = "0.2.0" }
 serde_json = "1.0"
 memchr = "2.7"
-simd-json = "0.14"
-sonic-rs = "0.3"
+simd-json = "0.17"
+sonic-rs = "0.5"
 
 [dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 toml = "0.9"
-simd-json = "0.14"
-sonic-rs = "0.3"
+simd-json = "0.17"
+sonic-rs = "0.5"
 proptest = "1.5"
-proptest-derive = "0.5"
+proptest-derive = "0.8"
 arbitrary = { version = "1.4", features = ["derive"] }
 rayon = "1.10"
 ahash = "=0.8.12"
-json-patch = "3.0"
+json-patch = "4.1"
 
 [lints]
 workspace = true
