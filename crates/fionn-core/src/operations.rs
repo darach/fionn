@@ -5,6 +5,21 @@
 
 use super::value::OperationValue;
 
+/// DSON compliance mode
+///
+/// Controls the level of DSON specification compliance for CRDT operations.
+/// Weak mode uses the existing `VectorClock`-based approach; Strict mode
+/// implements full Rinberg et al. (PVLDB 2022) semantics.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
+pub enum DsonMode {
+    /// Current behavior: `VectorClock`-based causality, path-level OR, index-based arrays
+    #[default]
+    Weak,
+    /// Full Rinberg et al. compliance: dot-based causality, dot-level OR,
+    /// identity-preserving arrays, lattice join
+    Strict,
+}
+
 /// Merge strategies for CRDT conflict resolution
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MergeStrategy {

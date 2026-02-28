@@ -188,6 +188,14 @@ update-dep dep:
 # CI Checks
 # =============================================================================
 
+# Pre-push dry run: all CI gates without network (no audit)
+# Runs: fmt, clippy, test, doc, MSRV, fuzz build check
+preflight: fmt-check clippy test doc-check msrv fuzz-check
+
+# Verify fuzz targets compile (separate workspace)
+fuzz-check:
+    cd fuzz && cargo check
+
 # CI-style check (runs fmt, clippy, doc, tests, security audit)
 ci: fmt-check clippy doc-check test audit
 

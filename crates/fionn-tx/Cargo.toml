@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+
+[package]
+name = "fionn-tx"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Transactional envelopes for fionn CRDTs"
+readme = "README.md"
+keywords = ["json", "crdt", "transactions", "distributed"]
+categories = ["data-structures"]
+
+[dependencies]
+fionn-core = { path = "../fionn-core", version = "0.2.0" }
+fionn-crdt = { path = "../fionn-crdt", version = "0.2.0" }
+ahash = "=0.8.12"
+smallvec = "1.13"
+serde_json = "1.0"
+
+[dev-dependencies]
+proptest = "1.5"
+
+[lints]
+workspace = true

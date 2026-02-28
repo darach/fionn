@@ -212,3 +212,25 @@ pub fn resolve_conflict(
 2. **Compression**: Compress operation payloads
 3. **Batching**: Group operations into single messages
 4. **Prioritization**: Send critical updates first
+
+## Backlog: Hybrid Logical Clock (HLC)
+
+LWW merges and `CrdtOperation` timestamps currently use raw `u64` values. Across
+real replicas this requires callers to supply their own comparable timestamps —
+which in practice means either trusting NTP or accepting silent LWW mis-ordering.
+
+A **Hybrid Logical Clock** (Kulkarni & Demirbas, 2014) would close this gap:
+
+- Combines physical wall-clock time (48-bit ms) with a logical counter (16-bit),
+  packed into a single `u64` — so it's drop-in compatible with existing timestamp
+  fields.
+- Guarantees causal ordering: if event A happens-before event B, then
+  `hlc(A) < hlc(B)`, even when wall clocks diverge.
+- Complements VectorClock rather than replacing it — VectorClock tracks full
+  causal history across replicas; HLC provides a compact, totally-ordered
+  timestamp for LWW tie-breaking.
+- Zero external dependencies (~170 lines). `now()` for local events, `receive(ts)`
+  on message arrival, configurable max drift detection.
+
+Reference implementation: `opensharded/src/distributed/hlc.rs` (Kulkarni &
+Demirbas 2014, same design as CockroachDB's HLC).

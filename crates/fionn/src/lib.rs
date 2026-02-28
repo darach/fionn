@@ -35,6 +35,9 @@ pub use fionn_stream::streaming;
 // CRDT
 pub use fionn_crdt as crdt;
 
+// Transactions
+pub use fionn_tx as tx;
+
 // Gron
 pub use fionn_gron as gron;
 

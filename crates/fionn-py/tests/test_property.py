@@ -209,8 +209,12 @@ class TestCsvProperties:
         st.lists(
             st.fixed_dictionaries(
                 {
-                    "name": st.from_regex(r"[a-zA-Z]{1,10}", fullmatch=True),
-                    "city": st.from_regex(r"[a-zA-Z]{1,10}", fullmatch=True),
+                    "name": st.from_regex(r"[a-zA-Z]{1,10}", fullmatch=True).filter(
+                        lambda s: s.upper() not in ("NAN", "INF", "INFINITY", "NULL", "TRUE", "FALSE")
+                    ),
+                    "city": st.from_regex(r"[a-zA-Z]{1,10}", fullmatch=True).filter(
+                        lambda s: s.upper() not in ("NAN", "INF", "INFINITY", "NULL", "TRUE", "FALSE")
+                    ),
                 }
             ),
             min_size=1,

@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 499b9624d62e62ebaf579ac516583fa5d0080b900f3fb14dea5f6342a87164de # shrinks to ops_a = [("a", StringRef("a"), Dot { replica_id: 5, sequence: 1 })], ops_b = [("b", StringRef("a"), Dot { replica_id: 4, sequence: 29 }), ("b", StringRef("a"), Dot { replica_id: 4, sequence: 29 })]

@@ -13,6 +13,7 @@ members = [
     "crates/fionn-stream",
     "crates/fionn-pool",
     "crates/fionn-cli",
+    "crates/fionn-tx",
     "crates/fionn",
     "crates/fionn-py",
 ]
