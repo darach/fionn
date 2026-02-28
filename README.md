@@ -130,6 +130,17 @@ fionn-simd = "0.1"  # For skip operations
 fionn-stream = "0.1"  # For JSONL streaming
 ```
 
+## Python Bindings
+
+fionn is also available as a Python package on [PyPI](https://pypi.org/project/fionn/).
+It works as a drop-in orjson replacement and exposes ISONL streaming, CRDT sync,
+diff/patch, and the rest of the Rust feature set to Python. See the
+[fionn-py README](crates/fionn-py) for installation and usage.
+
+```bash
+pip install fionn
+```
+
 ## Quick Start
 
 ### CLI Usage
@@ -185,10 +196,12 @@ fionn (umbrella crate)
 ├── fionn-tape     # Tape-based JSON representation
 ├── fionn-ops      # BlackBox processor, schema filtering
 ├── fionn-crdt     # Delta-state CRDTs for distributed sync
+├── fionn-tx       # Transactional envelopes for CRDTs
 ├── fionn-diff     # JSON diff/patch (RFC 6902)
 ├── fionn-gron     # Make JSON greppable
 ├── fionn-pool     # Memory pooling for zero-allocation processing
-└── fionn-cli      # Command-line interface
+├── fionn-cli      # Command-line interface
+└── fionn-py       # Python bindings (PyPI)
 ```
 
 ## Skip Strategies

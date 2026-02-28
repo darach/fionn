@@ -238,6 +238,8 @@ jobs:
           sleep 30
           cargo publish -p fionn-crdt --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
           sleep 30
+          cargo publish -p fionn-tx --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
+          sleep 30
           cargo publish -p fionn-ops --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
           sleep 30
           cargo publish -p fionn-gron --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true

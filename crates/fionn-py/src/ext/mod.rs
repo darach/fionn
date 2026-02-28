@@ -18,6 +18,7 @@ mod isonl;
 mod jsonl;
 mod pipeline;
 mod tape;
+mod tx;
 
 use pyo3::prelude::*;
 
@@ -105,6 +106,19 @@ pub fn register_ext_module(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(tape::parse_tape, m)?)?;
     m.add_function(wrap_pyfunction!(tape::batch_resolve, m)?)?;
     m.add_function(wrap_pyfunction!(tape::batch_query, m)?)?;
+
+    // ==========================================================================
+    // Transaction Protocol
+    // ==========================================================================
+    m.add_class::<tx::TxMode>()?;
+    m.add_class::<tx::TxState>()?;
+    m.add_class::<tx::TxRuntime>()?;
+    m.add_class::<tx::Transaction>()?;
+    m.add_class::<tx::TxEvent>()?;
+    m.add_class::<tx::TxEventBundle>()?;
+    m.add_class::<tx::TxEventData>()?;
+    m.add_function(wrap_pyfunction!(tx::quick_tx, m)?)?;
+    m.add_function(wrap_pyfunction!(tx::tx_modes, m)?)?;
 
     Ok(())
 }

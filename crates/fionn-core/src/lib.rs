@@ -50,7 +50,7 @@ pub use error::{DsonError, Result};
 pub use format::{
     Confidence, DetectionResult, FormatKind, FormatSpecificKind, NodeKind, ParsingContext,
 };
-pub use operations::{DsonOperation, MergeStrategy};
+pub use operations::{DsonMode, DsonOperation, MergeStrategy};
 pub use path::{
     ParsedPath, PathCache, PathComponent, PathComponentRange, PathComponentRef, parse_simd,
     parse_simd_ref_into,

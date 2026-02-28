@@ -18,6 +18,12 @@ libfuzzer-sys = "0.4"
 path = "../crates/fionn-core"
 features = ["yaml", "toml", "csv", "ison", "toon"]
 
+[dependencies.fionn-crdt]
+path = "../crates/fionn-crdt"
+
+[dependencies.fionn-tx]
+path = "../crates/fionn-tx"
+
 [dependencies.fionn-tape]
 path = "../crates/fionn-tape"
 
@@ -120,6 +126,27 @@ bench = false
 [[bin]]
 name = "fuzz_streaming_formats"
 path = "fuzz_targets/fuzz_streaming_formats.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tx_commit"
+path = "fuzz_targets/fuzz_tx_commit.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tx_replay"
+path = "fuzz_targets/fuzz_tx_replay.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_tx_interleave"
+path = "fuzz_targets/fuzz_tx_interleave.rs"
 test = false
 doc = false
 bench = false

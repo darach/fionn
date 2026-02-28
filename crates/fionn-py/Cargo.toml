@@ -49,6 +49,7 @@ fionn-ops = { path = "../fionn-ops" }
 fionn-gron = { path = "../fionn-gron" }
 fionn-diff = { path = "../fionn-diff" }
 fionn-crdt = { path = "../fionn-crdt" }
+fionn-tx = { path = "../fionn-tx" }
 fionn-stream = { path = "../fionn-stream" }
 fionn-pool = { path = "../fionn-pool" }
 

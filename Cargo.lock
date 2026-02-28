@@ -430,6 +430,7 @@ dependencies = [
  "fionn-simd",
  "fionn-stream",
  "fionn-tape",
+ "fionn-tx",
  "json-patch",
  "memchr",
  "proptest",
@@ -491,6 +492,7 @@ dependencies = [
  "ahash",
  "criterion",
  "fionn-core",
+ "proptest",
  "rayon",
  "serde_json",
  "smallvec",
@@ -574,6 +576,7 @@ dependencies = [
  "fionn-simd",
  "fionn-stream",
  "fionn-tape",
+ "fionn-tx",
  "itoa",
  "memchr",
  "numpy",
@@ -638,6 +641,18 @@ dependencies = [
  "proptest",
  "serde_json",
  "simd-json",
+]
+
+[[package]]
+name = "fionn-tx"
+version = "0.2.0"
+dependencies = [
+ "ahash",
+ "fionn-core",
+ "fionn-crdt",
+ "proptest",
+ "serde_json",
+ "smallvec",
 ]
 
 [[package]]

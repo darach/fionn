@@ -536,3 +536,239 @@ class TapePool:
     def parse(self, data: bytes) -> Tape:
         """Parse JSON bytes using pooled tape."""
         ...
+
+# =============================================================================
+# Transaction Protocol
+# =============================================================================
+
+class TxMode(Enum):
+    """Transaction protocol mode.
+
+    Nine protocol modes for different consistency/availability trade-offs.
+    """
+
+    Ramp = ...
+    """Read-Atomic Multi-Partition"""
+    Rola = ...
+    """RAMP + Compare-And-Swap"""
+    Psi = ...
+    """Parallel Snapshot Isolation"""
+    Tcb = ...
+    """Transactional Causal Broadcast"""
+    Calvin = ...
+    """Deterministic execution"""
+    Saga = ...
+    """Compensating transactions"""
+    EscrowCounters = ...
+    """Pre-allocated numeric budgets"""
+    SsiLite = ...
+    """Serializable Snapshot Isolation (lite)"""
+    MaterializedViews = ...
+    """Atomic base + derived view updates"""
+
+class TxState(Enum):
+    """Transaction lifecycle state."""
+
+    Active = ...
+    """Transaction is accepting operations"""
+    Preparing = ...
+    """Validation in progress"""
+    Committed = ...
+    """Successfully committed"""
+    Aborted = ...
+    """Rolled back"""
+
+class TxEvent:
+    """A single transaction event."""
+
+    tx_id: int
+    """Transaction ID."""
+    kind: str
+    """Event kind ('begin', 'commit', 'abort', 'compensate', etc.)."""
+    num_operations: int
+    """Number of operations in the payload."""
+
+class TxEventBundle:
+    """Bundle of transaction events that can be passed to apply_events.
+
+    Examples:
+        >>> bundle = runtime.commit_tx(tx)
+        >>> other_runtime.apply_events([bundle.to_event_data()])
+    """
+
+    events: list[TxEvent]
+    """Python-visible events."""
+
+    def to_event_data(self) -> TxEventData:
+        """Convert to event data for passing to apply_events."""
+        ...
+
+    def __len__(self) -> int:
+        """Number of events."""
+        ...
+
+class TxEventData:
+    """Opaque event data for passing to apply_events."""
+
+    ...
+
+class Transaction:
+    """Buffered transaction handle.
+
+    Buffer operations with set(), get(), delete(), then commit or abort
+    via the runtime.
+
+    Examples:
+        >>> runtime = fx.TxRuntime(replica_id=1)
+        >>> tx = runtime.begin(fx.TxMode.Calvin)
+        >>> tx.set("key", "value")
+        >>> bundle = runtime.commit_tx(tx)
+    """
+
+    @property
+    def state(self) -> TxState:
+        """Current transaction state."""
+        ...
+
+    @property
+    def mode(self) -> TxMode:
+        """Transaction protocol mode."""
+        ...
+
+    @property
+    def num_operations(self) -> int:
+        """Number of buffered operations."""
+        ...
+
+    def set(self, path: str, value: Any) -> None:
+        """Set a value at the given path."""
+        ...
+
+    def get(self, path: str) -> None:
+        """Record a read at the given path."""
+        ...
+
+    def delete(self, path: str) -> None:
+        """Record a delete at the given path."""
+        ...
+
+class TxRuntime:
+    """Transaction runtime — manages CRDT processor and transaction protocols.
+
+    Supports all 9 transaction protocol modes.
+
+    Examples:
+        >>> runtime = fx.TxRuntime(replica_id=1)
+        >>> tx = runtime.begin(fx.TxMode.Ramp)
+        >>> tx.set("name", "Alice")
+        >>> bundle = runtime.commit_tx(tx)
+        >>> print(bundle.events)
+    """
+
+    def __init__(self, replica_id: int = 1) -> None:
+        """Create a new transaction runtime.
+
+        Args:
+            replica_id: Unique identifier for this replica (default: 1)
+        """
+        ...
+
+    def begin(
+        self,
+        mode: TxMode,
+        timeout_ms: int | None = None,
+        max_retries: int = 0,
+    ) -> Transaction:
+        """Begin a new transaction.
+
+        Args:
+            mode: Transaction protocol mode
+            timeout_ms: Optional timeout in milliseconds
+            max_retries: Maximum retry count (default: 0)
+
+        Returns:
+            A Transaction handle for buffering operations
+        """
+        ...
+
+    def execute(
+        self,
+        mode: TxMode,
+        operations: dict[str, Any],
+        timeout_ms: int | None = None,
+        max_retries: int = 0,
+    ) -> list[TxEvent]:
+        """Execute a full transaction: begin, apply, commit.
+
+        One-shot convenience API. Operations are provided as a dict.
+
+        Args:
+            mode: Transaction protocol mode
+            operations: Dict of {path: value} pairs
+            timeout_ms: Optional timeout in milliseconds
+            max_retries: Maximum retry count
+
+        Returns:
+            List of TxEvent on success
+
+        Raises:
+            ValueError: If the transaction is aborted
+        """
+        ...
+
+    def commit_tx(self, transaction: Transaction) -> TxEventBundle:
+        """Commit a transaction handle.
+
+        Args:
+            transaction: The transaction to commit
+
+        Returns:
+            TxEventBundle with events and replayable data
+
+        Raises:
+            ValueError: If the transaction is aborted
+            RuntimeError: If the transaction is not active
+        """
+        ...
+
+    def abort_tx(self, transaction: Transaction) -> list[TxEvent]:
+        """Abort a transaction handle.
+
+        Args:
+            transaction: The transaction to abort
+
+        Returns:
+            List of abort events
+        """
+        ...
+
+    def apply_events(self, events: list[TxEventData]) -> None:
+        """Apply remote transaction events to this runtime.
+
+        Args:
+            events: List of TxEventData from other runtimes
+        """
+        ...
+
+def quick_tx(
+    mode: TxMode,
+    operations: dict[str, Any],
+    replica_id: int = 1,
+) -> list[TxEvent]:
+    """Execute a one-shot transaction.
+
+    Convenience function that creates a runtime, executes, and returns events.
+
+    Args:
+        mode: Transaction protocol mode
+        operations: Dict of {path: value} pairs
+        replica_id: Optional replica ID (default: 1)
+
+    Returns:
+        List of TxEvent
+    """
+    ...
+
+def tx_modes() -> list[str]:
+    """List all available transaction mode names."""
+    ...
