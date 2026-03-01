@@ -5,6 +5,17 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.3.0)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (validate only, do not release)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -13,9 +24,140 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  # Prepare release: validate version, check semver, bump & tag
+  prepare:
+    name: Prepare Release
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+      tag: ${{ steps.validate.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+
+      - name: Install tools
+        run: cargo install cargo-semver-checks cargo-release
+
+      - name: Validate version and check semver
+        id: validate
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ inputs.version }}"
+
+          # Validate version format
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$'; then
+            echo "::error::Invalid version format: $VERSION (expected X.Y.Z or X.Y.Z-pre.N)"
+            exit 1
+          fi
+
+          # Check tag doesn't exist
+          if git tag --list "v$VERSION" | grep -q .; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+
+          # Parse requested version components
+          IFS='.' read -r REQ_MAJOR REQ_MINOR REQ_PATCH <<< "$(echo "$VERSION" | sed 's/-.*//')"
+
+          # Get current version
+          CURRENT=$(cargo metadata --no-deps --format-version 1 | \
+            python3 -c "import json,sys; pkgs=json.load(sys.stdin)['packages']; print(next(p['version'] for p in pkgs if p['name']=='fionn'))")
+          IFS='.' read -r CUR_MAJOR CUR_MINOR CUR_PATCH <<< "$(echo "$CURRENT" | sed 's/-.*//')"
+
+          echo "Current version: $CURRENT"
+          echo "Requested version: $VERSION"
+
+          # Discover publishable crates in topological order
+          CRATES=$(cargo metadata --no-deps --format-version 1 | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for pkg in data['packages']:
+              if pkg.get('publish') is not None:
+                  continue
+              has_dep = False
+              for dep in pkg['dependencies']:
+                  if dep.get('path') and dep.get('kind') is None:
+                      has_dep = True
+                      print(dep['name'] + ' ' + pkg['name'])
+              if not has_dep:
+                  print(pkg['name'] + ' ' + pkg['name'])
+          " | tsort)
+
+          echo "Discovered crates:"
+          echo "$CRATES"
+
+          # Detect new crates (not yet on crates.io)
+          NEW_CRATES=""
+          for crate in $CRATES; do
+            if ! curl -sf "https://crates.io/api/v1/crates/$crate" > /dev/null 2>&1; then
+              NEW_CRATES="$NEW_CRATES $crate"
+              echo "  NEW: $crate (not yet on crates.io)"
+            fi
+          done
+
+          # Run semver-checks
+          MAX_BUMP="patch"
+          SEMVER_OUTPUT=$(cargo semver-checks --workspace 2>&1) || true
+
+          if echo "$SEMVER_OUTPUT" | grep -q "FAIL"; then
+            MAX_BUMP="major"
+            echo "Semver check: BREAKING changes detected"
+          elif echo "$SEMVER_OUTPUT" | grep -qE "(Summary.*minor|new pub)"; then
+            MAX_BUMP="minor"
+            echo "Semver check: minor (new features) detected"
+          else
+            echo "Semver check: patch level changes"
+          fi
+
+          # Escalate to minor if there are new crates
+          if [ -n "$NEW_CRATES" ] && [ "$MAX_BUMP" = "patch" ]; then
+            MAX_BUMP="minor"
+            echo "Escalating to minor bump: new crates detected:$NEW_CRATES"
+          fi
+
+          # Enforce semver: reject if requested version is too low
+          case $MAX_BUMP in
+            major)
+              if [ "$REQ_MAJOR" -le "$CUR_MAJOR" ]; then
+                echo "::error::Breaking changes detected — version must be a major bump (>= $((CUR_MAJOR+1)).0.0), got $VERSION"
+                exit 1
+              fi
+              ;;
+            minor)
+              if [ "$REQ_MAJOR" -eq "$CUR_MAJOR" ] && [ "$REQ_MINOR" -le "$CUR_MINOR" ]; then
+                echo "::error::New features/crates detected — version must be at least a minor bump (>= $CUR_MAJOR.$((CUR_MINOR+1)).0), got $VERSION"
+                exit 1
+              fi
+              ;;
+          esac
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Validated: $VERSION (required bump: $MAX_BUMP)"
+
+      - name: Execute release
+        if: inputs.dry_run != true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cargo release ${{ steps.validate.outputs.version }} --execute --no-confirm
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
   # Build release binaries
   build:
     name: Build (${{ matrix.target }})
+    needs: [prepare]
+    if: always() && (github.event_name == 'push' || (needs.prepare.result == 'success' && inputs.dry_run != true))
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -46,6 +188,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
@@ -221,36 +365,67 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
 
       - name: Publish crates
         run: |
-          # Publish in dependency order
-          cargo publish -p fionn-simd --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-core --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-tape --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-diff --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-crdt --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-tx --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-ops --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-gron --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-pool --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-stream --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn-cli --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
-          sleep 30
-          cargo publish -p fionn --token ${{ secrets.CARGO_REGISTRY_TOKEN }} || true
+          set -euo pipefail
+
+          # Discover publishable crates in topological order
+          CRATES=$(cargo metadata --no-deps --format-version 1 | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for pkg in data['packages']:
+              if pkg.get('publish') is not None:
+                  continue
+              has_dep = False
+              for dep in pkg['dependencies']:
+                  if dep.get('path') and dep.get('kind') is None:
+                      has_dep = True
+                      print(dep['name'] + ' ' + pkg['name'])
+              if not has_dep:
+                  print(pkg['name'] + ' ' + pkg['name'])
+          " | tsort)
+
+          echo "Publishing crates in order:"
+          echo "$CRATES"
+
+          publish_crate() {
+            local crate=$1
+            local max_retries=3
+            local attempt=1
+
+            while [ $attempt -le $max_retries ]; do
+              echo "::group::Publishing $crate (attempt $attempt/$max_retries)"
+              if cargo publish -p "$crate" --token "$CARGO_REGISTRY_TOKEN"; then
+                echo "::endgroup::"
+                echo "Published $crate successfully"
+                # Wait for crates.io index to propagate
+                sleep 30
+                return 0
+              fi
+              echo "::endgroup::"
+
+              if [ $attempt -lt $max_retries ]; then
+                echo "Retrying $crate in 30s..."
+                sleep 30
+              fi
+              attempt=$((attempt + 1))
+            done
+
+            echo "::error::Failed to publish $crate after $max_retries attempts"
+            return 1
+          }
+
+          for crate in $CRATES; do
+            publish_crate "$crate"
+          done
+
+          echo "All crates published successfully"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
@@ -266,3 +441,10 @@ jobs:
     with:
       base64-subjects: "${{ needs.collect-hashes.outputs.hashes }}"
       upload-assets: true
+
+  # Publish Python bindings to PyPI
+  pypi:
+    name: Publish to PyPI
+    needs: [release]
+    uses: ./.github/workflows/pypi.yml
+    secrets: inherit

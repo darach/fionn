@@ -227,6 +227,24 @@ publish-check:
     #!/usr/bin/env bash
     set -e
 
+    # Discover publishable crates in topological order
+    discover_crates() {
+      cargo metadata --no-deps --format-version 1 | python3 -c "
+    import json, sys
+    data = json.load(sys.stdin)
+    for pkg in data['packages']:
+        if pkg.get('publish') is not None:
+            continue
+        has_dep = False
+        for dep in pkg['dependencies']:
+            if dep.get('path') and dep.get('kind') is None:
+                has_dep = True
+                print(dep['name'] + ' ' + pkg['name'])
+        if not has_dep:
+            print(pkg['name'] + ' ' + pkg['name'])
+    " | tsort
+    }
+
     # Get the last release tag
     LAST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)
 
@@ -293,17 +311,11 @@ publish-check:
     echo "=========================================="
     echo ""
     echo "Dependency order for publishing:"
-    echo "  1. fionn-simd"
-    echo "  2. fionn-core"
-    echo "  3. fionn-tape"
-    echo "  4. fionn-diff"
-    echo "  5. fionn-crdt"
-    echo "  6. fionn-ops"
-    echo "  7. fionn-gron"
-    echo "  8. fionn-pool"
-    echo "  9. fionn-stream"
-    echo "  10. fionn-cli"
-    echo "  11. fionn"
+    i=1
+    for crate in $(discover_crates); do
+        echo "  $i. $crate"
+        i=$((i + 1))
+    done
 
 # Dry-run publish to check for issues
 publish-dry-run crate:
@@ -313,8 +325,27 @@ publish-dry-run crate:
 publish-dry-run-all:
     #!/usr/bin/env bash
     set -e
+
+    # Discover publishable crates in topological order
+    discover_crates() {
+      cargo metadata --no-deps --format-version 1 | python3 -c "
+    import json, sys
+    data = json.load(sys.stdin)
+    for pkg in data['packages']:
+        if pkg.get('publish') is not None:
+            continue
+        has_dep = False
+        for dep in pkg['dependencies']:
+            if dep.get('path') and dep.get('kind') is None:
+                has_dep = True
+                print(dep['name'] + ' ' + pkg['name'])
+        if not has_dep:
+            print(pkg['name'] + ' ' + pkg['name'])
+    " | tsort
+    }
+
     echo "Dry-run publishing all crates in dependency order..."
-    for crate in fionn-simd fionn-core fionn-tape fionn-diff fionn-crdt fionn-ops fionn-gron fionn-pool fionn-stream fionn-cli fionn; do
+    for crate in $(discover_crates); do
         echo "=== Checking $crate ==="
         cargo publish -p $crate --dry-run --allow-dirty || echo "Warning: $crate dry-run failed"
     done
@@ -332,7 +363,26 @@ semver-report:
     #!/usr/bin/env bash
     set -e
     RED='\033[0;31m'; YELLOW='\033[0;33m'; GREEN='\033[0;32m'; DIM='\033[0;90m'; NC='\033[0m'
-    CRATES="fionn-simd fionn-core fionn-tape fionn-diff fionn-crdt fionn-ops fionn-gron fionn-pool fionn-stream fionn"
+
+    # Discover publishable crates in topological order
+    discover_crates() {
+      cargo metadata --no-deps --format-version 1 | python3 -c "
+    import json, sys
+    data = json.load(sys.stdin)
+    for pkg in data['packages']:
+        if pkg.get('publish') is not None:
+            continue
+        has_dep = False
+        for dep in pkg['dependencies']:
+            if dep.get('path') and dep.get('kind') is None:
+                has_dep = True
+                print(dep['name'] + ' ' + pkg['name'])
+        if not has_dep:
+            print(pkg['name'] + ' ' + pkg['name'])
+    " | tsort
+    }
+
+    CRATES=$(discover_crates)
     LAST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)
 
     bump_version() {
@@ -390,6 +440,157 @@ semver-report:
             fi
         done
     done
+
+# Suggest next version based on semver compatibility analysis
+version-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    RED='\033[0;31m'; YELLOW='\033[0;33m'; GREEN='\033[0;32m'
+    BOLD='\033[1m'; DIM='\033[0;90m'; NC='\033[0m'
+
+    # Discover publishable crates in topological order
+    discover_crates() {
+      cargo metadata --no-deps --format-version 1 | python3 -c "
+    import json, sys
+    data = json.load(sys.stdin)
+    for pkg in data['packages']:
+        if pkg.get('publish') is not None:
+            continue
+        has_dep = False
+        for dep in pkg['dependencies']:
+            if dep.get('path') and dep.get('kind') is None:
+                has_dep = True
+                print(dep['name'] + ' ' + pkg['name'])
+        if not has_dep:
+            print(pkg['name'] + ' ' + pkg['name'])
+    " | tsort
+    }
+
+    CRATES=$(discover_crates)
+    LAST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -1)
+    CURRENT_VERSION=$(cargo metadata --no-deps --format-version 1 2>/dev/null | python3 -c "
+    import json, sys
+    pkgs = json.load(sys.stdin)['packages']
+    print(next(p['version'] for p in pkgs if p['name'] == 'fionn'))
+    ")
+
+    if [ -z "$LAST_TAG" ]; then
+        echo "No previous release tags found."
+        echo "Suggested version: $CURRENT_VERSION (initial release)"
+        exit 0
+    fi
+
+    echo -e "${BOLD}Version Check${NC}"
+    echo "  current version: $CURRENT_VERSION"
+    echo "  last release:    $LAST_TAG"
+    echo ""
+
+    bump_version() {
+        local ver=$1 level=$2
+        IFS='.' read -r major minor patch <<< "$ver"
+        case $level in
+            major) echo "$((major+1)).0.0" ;;
+            minor) echo "$major.$((minor+1)).0" ;;
+            patch) echo "$major.$minor.$((patch+1))" ;;
+        esac
+    }
+
+    # Track the highest required bump across all crates
+    MAX_BUMP="patch"
+    BREAKING_CRATES=""
+    FEATURE_CRATES=""
+    CHANGED_CRATES=""
+    NEW_CRATES=""
+    UNCHANGED=0
+
+    for crate in $CRATES; do
+        crate_path=$(cargo metadata --no-deps --format-version 1 2>/dev/null | \
+            python3 -c "
+    import json, sys, os
+    pkgs = json.load(sys.stdin)['packages']
+    pkg = next(p for p in pkgs if p['name'] == '$crate')
+    print(os.path.dirname(pkg['manifest_path']))
+    ")
+
+        # Detect new crates (not yet on crates.io)
+        if ! curl -sf "https://crates.io/api/v1/crates/$crate" > /dev/null 2>&1; then
+            NEW_CRATES="$NEW_CRATES $crate"
+        fi
+
+        # Check for changes since last tag
+        commits=$(git log --oneline "$LAST_TAG"..HEAD -- "$crate_path" 2>/dev/null || true)
+        count=$(echo "$commits" | grep -c . 2>/dev/null || echo 0)
+
+        if [ "$count" -eq 0 ]; then
+            UNCHANGED=$((UNCHANGED + 1))
+            continue
+        fi
+
+        CHANGED_CRATES="$CHANGED_CRATES $crate"
+
+        # Run semver-checks
+        output=$(cargo semver-checks -p "$crate" 2>&1) || true
+
+        if echo "$output" | grep -q "FAIL"; then
+            MAX_BUMP="major"
+            BREAKING_CRATES="$BREAKING_CRATES $crate"
+            echo -e "  ${RED}BREAKING${NC}  $crate"
+            # Show the specific breaking changes
+            echo "$output" | grep -E "^--- " | head -5 | while read -r line; do
+                echo -e "    ${DIM}$line${NC}"
+            done
+        elif echo "$output" | grep -qE "(Summary.*minor|new pub)"; then
+            if [ "$MAX_BUMP" != "major" ]; then
+                MAX_BUMP="minor"
+            fi
+            FEATURE_CRATES="$FEATURE_CRATES $crate"
+            echo -e "  ${YELLOW}feature${NC}   $crate"
+        else
+            echo -e "  ${GREEN}patch${NC}     $crate"
+        fi
+    done
+
+    # Escalate to minor if there are new crates
+    if [ -n "$NEW_CRATES" ] && [ "$MAX_BUMP" = "patch" ]; then
+        MAX_BUMP="minor"
+        echo -e "  ${YELLOW}new${NC}       (new crates:$NEW_CRATES)"
+    fi
+
+    if [ -z "$CHANGED_CRATES" ]; then
+        echo "  No crates have changes since $LAST_TAG."
+        echo ""
+        echo "Nothing to release."
+        exit 0
+    fi
+
+    echo -e "  ${DIM}($UNCHANGED crate(s) unchanged)${NC}"
+    echo ""
+
+    # Determine suggested version
+    SUGGESTED=$(bump_version "$CURRENT_VERSION" "$MAX_BUMP")
+
+    # Show summary
+    case $MAX_BUMP in
+        major)
+            echo -e "${BOLD}Suggested version: ${RED}$SUGGESTED${NC} (major — breaking API changes)"
+            echo -e "  Breaking crates:$RED$BREAKING_CRATES${NC}"
+            ;;
+        minor)
+            echo -e "${BOLD}Suggested version: ${YELLOW}$SUGGESTED${NC} (minor — new features, backward compatible)"
+            echo -e "  Feature crates:$YELLOW$FEATURE_CRATES${NC}"
+            if [ -n "$NEW_CRATES" ]; then
+                echo -e "  New crates:$YELLOW$NEW_CRATES${NC}"
+            fi
+            ;;
+        patch)
+            echo -e "${BOLD}Suggested version: ${GREEN}$SUGGESTED${NC} (patch — bug fixes only)"
+            ;;
+    esac
+
+    echo ""
+    echo -e "To release: ${BOLD}gh workflow run release.yml -f version=$SUGGESTED${NC}"
+    echo -e "Dry run:    ${BOLD}gh workflow run release.yml -f version=$SUGGESTED -f dry_run=true${NC}"
 
 # =============================================================================
 # Cross-compilation (for releases)

@@ -6,7 +6,7 @@ build-backend = "maturin"
 
 [project]
 name = "fionn"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Fast JSON library with SIMD acceleration - drop-in orjson replacement + extended features"
 readme = "README.md"
 license = { text = "MIT OR Apache-2.0" }
