@@ -173,11 +173,13 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Build release binaries (only on tag push — workflow_dispatch pushes the tag,
-  # which triggers a new run via the push/tags trigger)
+  # Build release binaries
+  # - workflow_dispatch: chains after prepare
+  # - push tag: runs directly (prepare is skipped)
   build:
     name: Build (${{ matrix.target }})
-    if: github.event_name == 'push'
+    needs: [prepare]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
@@ -209,7 +211,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ needs.prepare.outputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
@@ -267,7 +269,8 @@ jobs:
   # Collect hashes for SLSA provenance
   collect-hashes:
     name: Collect Hashes
-    needs: build
+    needs: [build]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     runs-on: ubuntu-latest
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
@@ -295,7 +298,8 @@ jobs:
   # Create GitHub release
   release:
     name: Release
-    needs: [build, collect-hashes]
+    needs: [prepare, build, collect-hashes]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -304,6 +308,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.tag || github.ref }}
+          fetch-depth: 0
 
       - name: Download artifacts
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -319,11 +326,11 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # Extract version from tag
-          VERSION=${GITHUB_REF#refs/tags/v}
+          TAG="${{ needs.prepare.outputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
-          # Generate basic changelog
           echo "## What's Changed" > CHANGELOG.md
           echo "" >> CHANGELOG.md
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> CHANGELOG.md 2>/dev/null || echo "- Initial release" >> CHANGELOG.md
@@ -331,10 +338,11 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
           files: release/*
           body_path: CHANGELOG.md
           draft: false
-          prerelease: ${{ contains(github.ref, '-') }}
+          prerelease: ${{ contains(steps.changelog.outputs.tag, '-') }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -342,7 +350,8 @@ jobs:
   # Sign release artifacts with cosign (keyless / Sigstore OIDC)
   sign:
     name: Sign Release Artifacts
-    needs: release
+    needs: [prepare, release]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -372,6 +381,7 @@ jobs:
       - name: Upload signatures to release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
+          tag_name: ${{ needs.prepare.outputs.tag || github.ref_name }}
           files: signatures/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -379,7 +389,8 @@ jobs:
   # Publish to crates.io
   publish:
     name: Publish to crates.io
-    needs: release
+    needs: [prepare, release]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -388,7 +399,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ needs.prepare.outputs.tag || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
@@ -454,7 +465,8 @@ jobs:
   # SLSA provenance generation
   provenance:
     name: Generate SLSA Provenance
-    needs: collect-hashes
+    needs: [collect-hashes]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     permissions:
       actions: read
       id-token: write
@@ -468,6 +480,7 @@ jobs:
   pypi:
     name: Publish to PyPI
     needs: [release]
+    if: ${{ !failure() && !cancelled() && inputs.dry_run != true }}
     permissions:
       contents: read
       id-token: write
