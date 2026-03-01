@@ -1,14 +1,23 @@
 # cargo-release configuration
-# Usage: cargo release 0.2.0
+# Releases are driven by CI via: gh workflow run release.yml -f version=X.Y.Z
+# Run `just version-check` locally to get the suggested version and command.
 
 allow-branch = ["main"]
 sign-commit = false
 sign-tag = false
 push = true
 push-remote = "origin"
+
+# Publishing is handled by CI on tag push, not locally.
+# cargo-release only bumps versions, commits, tags, and pushes.
 publish = false
+
 pre-release-commit-message = "chore: release {{version}}"
 tag-message = "{{version}}"
 tag-prefix = ""
 tag = true
 consolidate-commits = true
+
+# Skip fionn-py — published to PyPI via maturin in CI, not crates.io
+[packages.fionn-py]
+release = false
