@@ -150,6 +150,7 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ steps.validate.outputs.version }}"
+          BRANCH="release/v$VERSION"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -157,18 +158,27 @@ jobs:
           # Bump versions, commit, and tag locally — do NOT push (main is protected)
           cargo release "$VERSION" --execute --no-confirm --no-push
 
-          # Push ONLY the tag (branch protection does not apply to tags)
-          git push origin "v$VERSION"
+          # Push the tag (--force handles re-runs where the tag exists from a prior partial run)
+          git push origin "v$VERSION" --force
 
-          # Create a PR to land the version bump commit on main
-          BRANCH="release/v$VERSION"
-          git checkout -b "$BRANCH"
+          # Delete stale remote branch from any prior cancelled/failed run
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+
+          # Create release branch (-B resets if it already exists locally)
+          git checkout -B "$BRANCH"
           git push origin "$BRANCH"
-          gh pr create \
-            --title "chore: release $VERSION" \
-            --body "Automated version bump to $VERSION from release workflow." \
-            --base main \
-            --head "$BRANCH"
+
+          # Create PR only if one doesn't already exist
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --state all --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -z "$EXISTING_PR" ]; then
+            gh pr create \
+              --title "chore: release $VERSION" \
+              --body "Automated version bump to $VERSION from release workflow." \
+              --base main \
+              --head "$BRANCH"
+          else
+            echo "PR #$EXISTING_PR already exists for $BRANCH — skipping creation"
+          fi
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
