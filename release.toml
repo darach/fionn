@@ -5,7 +5,7 @@
 allow-branch = ["main"]
 sign-commit = false
 sign-tag = false
-push = true
+push = false
 push-remote = "origin"
 
 # Publishing is handled by CI on tag push, not locally.

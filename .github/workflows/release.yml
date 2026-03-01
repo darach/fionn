@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     outputs:
       version: ${{ steps.validate.outputs.version }}
       tag: ${{ steps.validate.outputs.tag }}
@@ -147,11 +148,30 @@ jobs:
       - name: Execute release
         if: inputs.dry_run != true
         run: |
+          set -euo pipefail
+          VERSION="${{ steps.validate.outputs.version }}"
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          cargo release ${{ steps.validate.outputs.version }} --execute --no-confirm
+
+          # Bump versions, commit, and tag locally — do NOT push (main is protected)
+          cargo release "$VERSION" --execute --no-confirm --no-push
+
+          # Push ONLY the tag (branch protection does not apply to tags)
+          git push origin "v$VERSION"
+
+          # Create a PR to land the version bump commit on main
+          BRANCH="release/v$VERSION"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "chore: release $VERSION" \
+            --body "Automated version bump to $VERSION from release workflow." \
+            --base main \
+            --head "$BRANCH"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Build release binaries
   build:
@@ -279,6 +299,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
       actions: read
     steps:
       - name: Checkout
@@ -325,6 +346,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
       id-token: write  # Required for Sigstore OIDC keyless signing
     steps:
       - name: Install cosign
