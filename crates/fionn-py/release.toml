@@ -1,0 +1,2 @@
+# fionn-py is published to PyPI via maturin in CI, not crates.io
+release = false
