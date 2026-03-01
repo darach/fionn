@@ -127,7 +127,7 @@ jobs:
     name: Publish to PyPI
     needs: [linux, macos, windows, sdist]
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_call' || github.event.inputs.dry_run == 'false'
+    if: github.event.inputs.dry_run != 'true'
     environment:
       name: pypi
       url: https://pypi.org/project/fionn/

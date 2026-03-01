@@ -19,6 +19,7 @@ path = "src/lib.rs"
 [[bin]]
 name = "fionn"
 path = "src/main.rs"
+doc = false
 
 [[bin]]
 name = "simd-gron"
