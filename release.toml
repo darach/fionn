@@ -17,7 +17,3 @@ tag-message = "{{version}}"
 tag-prefix = ""
 tag = true
 consolidate-commits = true
-
-# Skip fionn-py — published to PyPI via maturin in CI, not crates.io
-[packages.fionn-py]
-release = false
