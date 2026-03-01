@@ -345,6 +345,11 @@ jobs:
           echo "" >> CHANGELOG.md
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> CHANGELOG.md 2>/dev/null || echo "- Initial release" >> CHANGELOG.md
 
+      - name: Delete stale release (idempotent retry)
+        run: gh release delete "${{ steps.changelog.outputs.tag }}" --yes 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create release
         uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
