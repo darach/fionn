@@ -149,21 +149,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Bump versions and commit locally (no push, no tag — we create the tag via API)
+          # Bump versions and commit locally (no push, no tag yet)
           cargo release "$VERSION" --execute --no-confirm --no-push --no-tag
 
-          TAG_SHA=$(git rev-parse HEAD)
-
-          # Push commit to release branch first so SHA exists on remote
+          # Create tag locally and push branch + tag together (no API race condition)
+          git tag -f "v$VERSION"
           git push origin --delete "$BRANCH" 2>/dev/null || true
           git checkout -B "$BRANCH"
-          git push origin "$BRANCH"
-
-          # Create tag via GitHub API (must be after push so SHA exists)
-          gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/v$VERSION" 2>/dev/null || true
-          gh api "repos/${{ github.repository }}/git/refs" \
-            -f ref="refs/tags/v$VERSION" \
-            -f sha="$TAG_SHA"
+          git push origin "$BRANCH" "v$VERSION" --force
 
           EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
           if [ -z "$EXISTING_PR" ]; then
