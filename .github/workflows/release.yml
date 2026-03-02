@@ -154,16 +154,16 @@ jobs:
 
           TAG_SHA=$(git rev-parse HEAD)
 
-          # Create tag via GitHub API (bypasses GH013 tag protection that blocks git push)
+          # Push commit to release branch first so SHA exists on remote
+          git push origin --delete "$BRANCH" 2>/dev/null || true
+          git checkout -B "$BRANCH"
+          git push origin "$BRANCH"
+
+          # Create tag via GitHub API (must be after push so SHA exists)
           gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/v$VERSION" 2>/dev/null || true
           gh api "repos/${{ github.repository }}/git/refs" \
             -f ref="refs/tags/v$VERSION" \
             -f sha="$TAG_SHA"
-
-          # Push version bump to release branch, PR back to main
-          git push origin --delete "$BRANCH" 2>/dev/null || true
-          git checkout -B "$BRANCH"
-          git push origin "$BRANCH"
 
           EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
           if [ -z "$EXISTING_PR" ]; then
