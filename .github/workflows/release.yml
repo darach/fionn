@@ -160,11 +160,21 @@ jobs:
           # Bump versions and commit locally (no push, no tag yet)
           cargo release "$VERSION" --execute --no-confirm --no-push --no-tag
 
-          # Create tag locally and push branch + tag together (no API race condition)
+          # Create tag locally and push branch + tag together
           git tag -f "v$VERSION"
           git push origin --delete "$BRANCH" 2>/dev/null || true
           git checkout -B "$BRANCH"
           git push origin "$BRANCH" "v$VERSION" --force
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Create release PR
+        if: inputs.dry_run != true
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.validate.outputs.version }}"
+          BRANCH="release/v$VERSION"
 
           EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
           if [ -z "$EXISTING_PR" ]; then
@@ -177,5 +187,10 @@ jobs:
             echo "PR #$EXISTING_PR already exists for $BRANCH"
           fi
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Trigger publish
+        if: inputs.dry_run != true
+        run: gh workflow run publish.yml -f tag="v${{ steps.validate.outputs.version }}"
+        env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
