@@ -157,7 +157,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Bump versions and commit locally (no push, no tag — we create the tag via API)
+          # Bump versions and commit locally (no push, no tag yet)
           cargo release "$VERSION" --execute --no-confirm --no-push --no-tag
 
           TAG_SHA=$(git rev-parse HEAD)
@@ -172,6 +172,16 @@ jobs:
           gh api "repos/${{ github.repository }}/git/refs" \
             -f ref="refs/tags/v$VERSION" \
             -f sha="$TAG_SHA"
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Create release PR
+        if: inputs.dry_run != true
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.validate.outputs.version }}"
+          BRANCH="release/v$VERSION"
 
           EXISTING_PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number' 2>/dev/null || true)
           if [ -z "$EXISTING_PR" ]; then
@@ -184,5 +194,10 @@ jobs:
             echo "PR #$EXISTING_PR already exists for $BRANCH"
           fi
         env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Trigger publish
+        if: inputs.dry_run != true
+        run: gh workflow run publish.yml -f tag="v${{ steps.validate.outputs.version }}"
+        env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
