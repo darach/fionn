@@ -416,7 +416,7 @@ checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "fionn"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "arbitrary",
@@ -446,7 +446,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-cli"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "afl",
  "anyhow",
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-core"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "dashmap",
@@ -487,7 +487,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-crdt"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "criterion",
@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-diff"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "criterion",
  "fionn-core",
@@ -514,7 +514,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-gron"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "criterion",
@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-ops"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "bumpalo",
@@ -551,7 +551,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-pool"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "criterion",
  "fionn-core",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-py"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "anyhow",
@@ -594,7 +594,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-simd"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "bumpalo",
  "criterion",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-stream"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "bumpalo",
@@ -631,7 +631,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-tape"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "criterion",
@@ -645,7 +645,7 @@ dependencies = [
 
 [[package]]
 name = "fionn-tx"
-version = "0.2.0"
+version = "0.3.0-rc2"
 dependencies = [
  "ahash",
  "fionn-core",
