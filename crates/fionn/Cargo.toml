@@ -45,10 +45,10 @@ sonic-rs = "0.5"
 criterion = { version = "0.8", features = ["html_reports"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-toml = "1.0"
+toml = "1.1"
 simd-json = "0.17"
 sonic-rs = "0.5"
-proptest = "1.5"
+proptest = "1.11"
 proptest-derive = "0.8"
 arbitrary = { version = "1.4", features = ["derive"] }
 rayon = "1.10"
