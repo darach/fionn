@@ -20,7 +20,7 @@ toml_crate = { package = "toml", version = "0.9", optional = true }
 ahash = "=0.8.12"
 smallvec = "1.13"
 regex = "1.10"
-dashmap = "6.1"
+dashmap = "6.2"
 memchr = "2.7"
 
 [features]
