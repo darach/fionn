@@ -14,7 +14,7 @@ categories = ["parsing", "encoding"]
 
 [dependencies]
 memchr = "2.7"
-rayon = "1.10"
+rayon = "1.12"
 bumpalo = "3.20"
 fionn-core = { path = "../fionn-core", version = "0.3.0-rc3" }
 serde_json = "1.0"

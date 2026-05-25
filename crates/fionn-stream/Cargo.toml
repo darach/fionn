@@ -33,10 +33,10 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 simd-json = "0.17"
 memchr = "2.7"
-rayon = "1.8"
+rayon = "1.12"
 ahash = "=0.8.12"
 smallvec = "1.13"
-dashmap = "6.1"
+dashmap = "6.2"
 
 [lints]
 workspace = true

@@ -51,9 +51,9 @@ sonic-rs = "0.5"
 proptest = "1.11"
 proptest-derive = "0.8"
 arbitrary = { version = "1.4", features = ["derive"] }
-rayon = "1.10"
+rayon = "1.12"
 ahash = "=0.8.12"
-json-patch = "4.1"
+json-patch = "4.2"
 
 [lints]
 workspace = true
