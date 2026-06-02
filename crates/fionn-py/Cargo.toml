@@ -75,7 +75,7 @@ itoa = "1.0"
 ryu = "1.0"
 
 # Byte scanning
-memchr = "2.7"
+memchr = "2.8"
 
 # Optional NumPy support
 numpy = { version = "0.27", optional = true }
